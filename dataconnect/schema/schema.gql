@@ -1,0 +1,30 @@
+type Medication @table {
+  name: String!
+  dosage: String!
+  stockQuantity: Int!
+  createdAt: Timestamp!
+  description: String
+  manufacturer: String
+}
+
+type Patient @table {
+  firstName: String!
+  lastName: String!
+  dateOfBirth: Date!
+  createdAt: Timestamp!
+  address: String
+  phoneNumber: String
+  email: String
+}
+
+type Prescription @table {
+  patient: Patient!
+  medication: Medication!
+  prescriptionDate: Date!
+  quantityPrescribed: Int!
+  dosageInstructions: String!
+  isFilled: Boolean!
+  createdAt: Timestamp!
+  refillsRemaining: Int
+  prescriberName: String
+}

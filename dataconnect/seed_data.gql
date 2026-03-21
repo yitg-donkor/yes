@@ -1,0 +1,48 @@
+mutation CreateDemoData @transaction @auth(level: PUBLIC, insecureReason: "This operation is for seeding demo data and can be exposed publicly.") {
+  medication_insertMany(data: [
+    {
+      name: "Paracetamol",
+      dosage: "500mg",
+      stockQuantity: 1000,
+      description: "Pain reliever",
+      manufacturer: "Generic Pharma",
+      createdAt: "2023-01-15T10:00:00Z"
+    },
+    {
+      name: "Amoxicillin",
+      dosage: "250mg",
+      stockQuantity: 500,
+      description: "Antibiotic",
+      manufacturer: "Health Meds",
+      createdAt: "2023-02-20T11:30:00Z"
+    },
+    {
+      name: "Ibuprofen",
+      dosage: "200mg",
+      stockQuantity: 750,
+      description: "Anti-inflammatory",
+      manufacturer: "PharmaCare",
+      createdAt: "2023-03-10T09:00:00Z"
+    }
+  ])
+  patient_insertMany(data: [
+    {
+      firstName: "John",
+      lastName: "Doe",
+      dateOfBirth: "1990-05-10",
+      address: "123 Main St",
+      phoneNumber: "555-1234",
+      email: "john.doe@example.com",
+      createdAt: "2023-04-01T14:00:00Z"
+    },
+    {
+      firstName: "Jane",
+      lastName: "Smith",
+      dateOfBirth: "1985-11-22",
+      address: "456 Oak Ave",
+      phoneNumber: "555-5678",
+      email: "jane.smith@example.com",
+      createdAt: "2023-04-05T16:15:00Z"
+    }
+  ])
+}

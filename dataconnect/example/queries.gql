@@ -1,0 +1,44 @@
+query ListAllPatients @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users.") {
+  patients {
+    id
+    firstName
+    lastName
+    dateOfBirth
+    email
+    phoneNumber
+    address
+    createdAt
+  }
+}
+
+mutation CreateNewPrescription($patientId: UUID!, $medicationId: UUID!, $prescriptionDate: Date!, $quantityPrescribed: Int!, $dosageInstructions: String!, $isFilled: Boolean!, $refillsRemaining: Int, $prescriberName: String) @auth(level: USER) {
+  prescription_insert(data: {
+    patientId: $patientId,
+    medicationId: $medicationId,
+    prescriptionDate: $prescriptionDate,
+    quantityPrescribed: $quantityPrescribed,
+    dosageInstructions: $dosageInstructions,
+    isFilled: $isFilled,
+    refillsRemaining: $refillsRemaining,
+    prescriberName: $prescriberName
+  })
+}
+
+query GetMedicationDetails($id: UUID!) @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public") {
+  medication(id: $id) {
+    name
+    dosage
+    description
+    manufacturer
+    stockQuantity
+    createdAt
+  }
+}
+
+mutation UpdatePatientContactInfo($id: UUID!, $email: String, $phoneNumber: String, $address: String) @auth(level: USER) {
+  patient_update(id: $id, data: {
+    email: $email,
+    phoneNumber: $phoneNumber,
+    address: $address
+  })
+}
