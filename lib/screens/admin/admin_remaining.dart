@@ -1,5 +1,6 @@
 // admin_branches.dart
 import 'package:flutter/material.dart';
+import 'package:yes/services/pharmacy_context.dart';
 import '../../services/supabase_service.dart';
 import 'generic_crud_page.dart';
 
@@ -33,71 +34,68 @@ class AdminBranchesPage extends StatelessWidget {
 
     showDialog(
       context: ctx,
-      builder:
-          (_) => StatefulBuilder(
-            builder:
-                (ctx2, setSt) => AlertDialog(
-                  title: Text(item == null ? 'Add Branch' : 'Edit Branch'),
-                  content: SizedBox(
-                    width: 400,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        DropdownButtonFormField<String>(
-                          initialValue: selectedPharmacy,
-                          decoration: InputDecoration(
-                            labelText: 'Pharmacy',
-                            prefixIcon: const Icon(Icons.local_pharmacy),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          items:
-                              pharmacies
-                                  .map(
-                                    (p) => DropdownMenuItem(
-                                      value: p['id'] as String,
-                                      child: Text(p['name'] as String),
-                                    ),
-                                  )
-                                  .toList(),
-                          onChanged: (v) => setSt(() => selectedPharmacy = v),
-                        ),
-                        const SizedBox(height: 12),
-                        _tf(name, 'Branch Name', Icons.location_on),
-                        const SizedBox(height: 12),
-                        _tf(address, 'Address', Icons.home),
-                        const SizedBox(height: 12),
-                        _tf(contact, 'Contact', Icons.phone),
-                      ],
+      builder: (_) => StatefulBuilder(
+        builder: (ctx2, setSt) => AlertDialog(
+          title: Text(item == null ? 'Add Branch' : 'Edit Branch'),
+          content: SizedBox(
+            width: 400,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: selectedPharmacy,
+                  decoration: InputDecoration(
+                    labelText: 'Pharmacy',
+                    prefixIcon: const Icon(Icons.local_pharmacy),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx2),
-                      child: const Text('Cancel'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        final data = {
-                          'pharmacy_id': selectedPharmacy,
-                          'name': name.text,
-                          'address': address.text,
-                          'contact': contact.text,
-                        };
-                        if (item == null) {
-                          await SupabaseService.addBranch(data);
-                        } else {
-                          await SupabaseService.updateBranch(item['id'], data);
-                        }
-                        Navigator.pop(ctx2);
-                        refresh();
-                      },
-                      child: const Text('Save'),
-                    ),
-                  ],
+                  items: pharmacies
+                      .map(
+                        (p) => DropdownMenuItem(
+                          value: p['id'] as String,
+                          child: Text(p['name'] as String),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) => setSt(() => selectedPharmacy = v),
                 ),
+                const SizedBox(height: 12),
+                _tf(name, 'Branch Name', Icons.location_on),
+                const SizedBox(height: 12),
+                _tf(address, 'Address', Icons.home),
+                const SizedBox(height: 12),
+                _tf(contact, 'Contact', Icons.phone),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx2),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final data = {
+                  'pharmacy_id': selectedPharmacy,
+                  'name': name.text,
+                  'address': address.text,
+                  'contact': contact.text,
+                };
+                if (item == null) {
+                  await SupabaseService.addBranch(data);
+                } else {
+                  await SupabaseService.updateBranch(item['id'], data);
+                }
+                Navigator.pop(ctx2);
+                refresh();
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -144,79 +142,73 @@ class AdminEmployeesPage extends StatelessWidget {
 
     showDialog(
       context: ctx,
-      builder:
-          (_) => StatefulBuilder(
-            builder:
-                (ctx2, setSt) => AlertDialog(
-                  title: Text(item == null ? 'Add Employee' : 'Edit Employee'),
-                  content: SizedBox(
-                    width: 400,
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          DropdownButtonFormField<String>(
-                            initialValue: selectedBranch,
-                            decoration: InputDecoration(
-                              labelText: 'Branch',
-                              prefixIcon: const Icon(Icons.location_on),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            items:
-                                branches
-                                    .map(
-                                      (b) => DropdownMenuItem(
-                                        value: b['id'] as String,
-                                        child: Text(b['name'] as String),
-                                      ),
-                                    )
-                                    .toList(),
-                            onChanged: (v) => setSt(() => selectedBranch = v),
-                          ),
-                          const SizedBox(height: 12),
-                          _tf(name, 'Employee Name', Icons.person),
-                          const SizedBox(height: 12),
-                          _tf(position, 'Position', Icons.work),
-                          const SizedBox(height: 12),
-                          _tf(email, 'Email', Icons.email),
-                          const SizedBox(height: 12),
-                          _tf(contact, 'Contact', Icons.phone),
-                        ],
+      builder: (_) => StatefulBuilder(
+        builder: (ctx2, setSt) => AlertDialog(
+          title: Text(item == null ? 'Add Employee' : 'Edit Employee'),
+          content: SizedBox(
+            width: 400,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedBranch,
+                    decoration: InputDecoration(
+                      labelText: 'Branch',
+                      prefixIcon: const Icon(Icons.location_on),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
+                    items: branches
+                        .map(
+                          (b) => DropdownMenuItem(
+                            value: b['id'] as String,
+                            child: Text(b['name'] as String),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) => setSt(() => selectedBranch = v),
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx2),
-                      child: const Text('Cancel'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        final data = {
-                          'branch_id': selectedBranch,
-                          'name': name.text,
-                          'position': position.text,
-                          'email': email.text,
-                          'contact': contact.text,
-                        };
-                        if (item == null) {
-                          await SupabaseService.addEmployee(data);
-                        } else {
-                          await SupabaseService.updateEmployee(
-                            item['id'],
-                            data,
-                          );
-                        }
-                        Navigator.pop(ctx2);
-                        refresh();
-                      },
-                      child: const Text('Save'),
-                    ),
-                  ],
-                ),
+                  const SizedBox(height: 12),
+                  _tf(name, 'Employee Name', Icons.person),
+                  const SizedBox(height: 12),
+                  _tf(position, 'Position', Icons.work),
+                  const SizedBox(height: 12),
+                  _tf(email, 'Email', Icons.email),
+                  const SizedBox(height: 12),
+                  _tf(contact, 'Contact', Icons.phone),
+                ],
+              ),
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx2),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final data = {
+                  'branch_id': selectedBranch,
+                  'name': name.text,
+                  'position': position.text,
+                  'email': email.text,
+                  'contact': contact.text,
+                };
+                if (item == null) {
+                  await SupabaseService.addEmployee(data);
+                } else {
+                  await SupabaseService.updateEmployee(item['id'], data);
+                }
+                Navigator.pop(ctx2);
+                refresh();
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -259,46 +251,48 @@ class AdminSuppliersPage extends StatelessWidget {
     final type = TextEditingController(text: item?['product_type'] ?? '');
     showDialog(
       context: ctx,
-      builder:
-          (_) => AlertDialog(
-            title: Text(item == null ? 'Add Supplier' : 'Edit Supplier'),
-            content: SizedBox(
-              width: 400,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _tf(name, 'Supplier Name', Icons.business),
-                  const SizedBox(height: 12),
-                  _tf(contact, 'Contact', Icons.phone),
-                  const SizedBox(height: 12),
-                  _tf(type, 'Product Type', Icons.category),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  final data = {
-                    'name': name.text,
-                    'contact': contact.text,
-                    'product_type': type.text,
-                  };
-                  if (item == null) {
-                    await SupabaseService.addSupplier(data);
-                  } else {
-                    await SupabaseService.updateSupplier(item['id'], data);
-                  }
-                  Navigator.pop(ctx);
-                  refresh();
-                },
-                child: const Text('Save'),
-              ),
+      builder: (_) => AlertDialog(
+        title: Text(item == null ? 'Add Supplier' : 'Edit Supplier'),
+        content: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _tf(name, 'Supplier Name', Icons.business),
+              const SizedBox(height: 12),
+              _tf(contact, 'Contact', Icons.phone),
+              const SizedBox(height: 12),
+              _tf(type, 'Product Type', Icons.category),
             ],
           ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final data = {
+                'name': name.text,
+                'contact': contact.text,
+                'product_type': type.text,
+              };
+              if (item == null) {
+                final dataWithPharmacy = await PharmacyContext.addPharmacyId(
+                  data,
+                );
+                await SupabaseService.addSupplier(dataWithPharmacy);
+              } else {
+                await SupabaseService.updateSupplier(item['id'], data);
+              }
+              Navigator.pop(ctx);
+              refresh();
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -322,10 +316,9 @@ class AdminCustomersPage extends StatelessWidget {
       title: 'Customers',
       icon: Icons.people_rounded,
       color: const Color(0xFFC2185B),
-      fetchItems:
-          () => SupabaseService.getAllProfiles().then(
-            (p) => p.where((x) => x['role'] == 'student').toList(),
-          ),
+      fetchItems: () => SupabaseService.getAllProfiles().then(
+        (p) => p.where((x) => x['role'] == 'student').toList(),
+      ),
       displayColumns: const ['name', 'email', 'student_id'],
       columnLabels: const ['Name', 'Email', 'Student ID'],
       onAdd: (ctx, refresh) {},
@@ -387,49 +380,48 @@ class _AdminSalesPageState extends State<AdminSalesPage> {
           ),
         ),
         Expanded(
-          child:
-              _loading
-                  ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
-                  )
-                  : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _sales.length,
-                    itemBuilder: (ctx, i) {
-                      final sale = _sales[i];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: ListTile(
-                          leading: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.red.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.point_of_sale,
-                              color: Colors.red.shade700,
-                              size: 20,
-                            ),
+          child: _loading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _sales.length,
+                  itemBuilder: (ctx, i) {
+                    final sale = _sales[i];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          title: Text(
-                            sale['product_name'] ?? 'Unknown',
-                            style: const TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          subtitle: Text(
-                            '${sale['employees']?['name'] ?? 'Staff'} · ${sale['payment_method'] ?? 'cash'}',
-                          ),
-                          trailing: Text(
-                            'GH₵ ${(double.tryParse(sale['total_cost']?.toString() ?? '0') ?? 0).toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF2E7D32),
-                            ),
+                          child: Icon(
+                            Icons.point_of_sale,
+                            color: Colors.red.shade700,
+                            size: 20,
                           ),
                         ),
-                      );
-                    },
-                  ),
+                        title: Text(
+                          sale['product_name'] ?? 'Unknown',
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                        subtitle: Text(
+                          '${sale['employees']?['name'] ?? 'Staff'} · ${sale['payment_method'] ?? 'cash'}',
+                        ),
+                        trailing: Text(
+                          'GH₵ ${(double.tryParse(sale['total_cost']?.toString() ?? '0') ?? 0).toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2E7D32),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
         ),
       ],
     );
@@ -446,151 +438,136 @@ class _AdminSalesPageState extends State<AdminSalesPage> {
     if (!mounted) return;
     showDialog(
       context: context,
-      builder:
-          (_) => StatefulBuilder(
-            builder:
-                (ctx, setSt) => AlertDialog(
-                  title: const Text('Add Sale'),
-                  content: SizedBox(
-                    width: 450,
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          DropdownButtonFormField<String>(
-                            initialValue: employeeId,
-                            decoration: InputDecoration(
-                              labelText: 'Employee',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            items:
-                                employees
-                                    .map(
-                                      (e) => DropdownMenuItem(
-                                        value: e['id'] as String,
-                                        child: Text(e['name'] as String),
-                                      ),
-                                    )
-                                    .toList(),
-                            onChanged: (v) => setSt(() => employeeId = v),
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setSt) => AlertDialog(
+          title: const Text('Add Sale'),
+          content: SizedBox(
+            width: 450,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<String>(
+                    initialValue: employeeId,
+                    decoration: InputDecoration(
+                      labelText: 'Employee',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    items: employees
+                        .map(
+                          (e) => DropdownMenuItem(
+                            value: e['id'] as String,
+                            child: Text(e['name'] as String),
                           ),
-                          const SizedBox(height: 12),
-                          DropdownButtonFormField<String>(
-                            initialValue: customerId,
-                            decoration: InputDecoration(
-                              labelText: 'Customer',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            items:
-                                customers
-                                    .where((c) => c['role'] == 'student')
-                                    .map(
-                                      (c) => DropdownMenuItem(
-                                        value: c['id'] as String,
-                                        child: Text(c['name'] as String),
-                                      ),
-                                    )
-                                    .toList(),
-                            onChanged: (v) => setSt(() => customerId = v),
+                        )
+                        .toList(),
+                    onChanged: (v) => setSt(() => employeeId = v),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: customerId,
+                    decoration: InputDecoration(
+                      labelText: 'Customer',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    items: customers
+                        .where((c) => c['role'] == 'student')
+                        .map(
+                          (c) => DropdownMenuItem(
+                            value: c['id'] as String,
+                            child: Text(c['name'] as String),
                           ),
-                          const SizedBox(height: 12),
-                          DropdownButtonFormField<String>(
-                            initialValue: productId,
-                            decoration: InputDecoration(
-                              labelText: 'Product',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            items:
-                                products
-                                    .map(
-                                      (p) => DropdownMenuItem(
-                                        value: p['id'] as String,
-                                        child: Text(p['name'] as String),
-                                      ),
-                                    )
-                                    .toList(),
-                            onChanged: (v) => setSt(() => productId = v),
+                        )
+                        .toList(),
+                    onChanged: (v) => setSt(() => customerId = v),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: productId,
+                    decoration: InputDecoration(
+                      labelText: 'Product',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    items: products
+                        .map(
+                          (p) => DropdownMenuItem(
+                            value: p['id'] as String,
+                            child: Text(p['name'] as String),
                           ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: qty,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: 'Quantity',
-                              prefixIcon: const Icon(Icons.numbers),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          DropdownButtonFormField<String>(
-                            initialValue:
-                                payment.text.isEmpty ? 'cash' : payment.text,
-                            decoration: InputDecoration(
-                              labelText: 'Payment Method',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            items:
-                                ['cash', 'mobile_money', 'card']
-                                    .map(
-                                      (m) => DropdownMenuItem(
-                                        value: m,
-                                        child: Text(m),
-                                      ),
-                                    )
-                                    .toList(),
-                            onChanged: (v) => payment.text = v ?? 'cash',
-                          ),
-                        ],
+                        )
+                        .toList(),
+                    onChanged: (v) => setSt(() => productId = v),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: qty,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Quantity',
+                      prefixIcon: const Icon(Icons.numbers),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Cancel'),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: payment.text.isEmpty ? 'cash' : payment.text,
+                    decoration: InputDecoration(
+                      labelText: 'Payment Method',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        final product = products.firstWhere(
-                          (p) => p['id'] == productId,
-                          orElse: () => {},
-                        );
-                        final price =
-                            double.tryParse(
-                              product['unit_price']?.toString() ?? '0',
-                            ) ??
-                            0;
-                        final quantity = int.tryParse(qty.text) ?? 1;
-                        await SupabaseService.addSale({
-                          'employee_id': employeeId,
-                          'customer_id': customerId,
-                          'product_id': productId,
-                          'product_name': product['name'],
-                          'quantity': quantity,
-                          'total_cost': price * quantity,
-                          'status': 'completed',
-                          'payment_method': payment.text,
-                          'receipt_num':
-                              'REC-${DateTime.now().millisecondsSinceEpoch}',
-                        });
-                        Navigator.pop(ctx);
-                        _load();
-                      },
-                      child: const Text('Save'),
-                    ),
-                  ],
-                ),
+                    items: ['cash', 'mobile_money', 'card']
+                        .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                        .toList(),
+                    onChanged: (v) => payment.text = v ?? 'cash',
+                  ),
+                ],
+              ),
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final product = products.firstWhere(
+                  (p) => p['id'] == productId,
+                  orElse: () => {},
+                );
+                final price =
+                    double.tryParse(product['unit_price']?.toString() ?? '0') ??
+                    0;
+                final quantity = int.tryParse(qty.text) ?? 1;
+                await SupabaseService.addSale({
+                  'employee_id': employeeId,
+                  'customer_id': customerId,
+                  'product_id': productId,
+                  'product_name': product['name'],
+                  'quantity': quantity,
+                  'total_cost': price * quantity,
+                  'status': 'completed',
+                  'payment_method': payment.text,
+                  'receipt_num': 'REC-${DateTime.now().millisecondsSinceEpoch}',
+                });
+                Navigator.pop(ctx);
+                _load();
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -628,41 +605,41 @@ class _AdminReceiptsPageState extends State<AdminReceiptsPage> {
   Widget build(BuildContext context) {
     return _loading
         ? const Center(
-          child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
-        )
+            child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+          )
         : ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: _receipts.length,
-          itemBuilder: (ctx, i) {
-            final r = _receipts[i];
-            return Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.shade50,
-                    borderRadius: BorderRadius.circular(8),
+            padding: const EdgeInsets.all(16),
+            itemCount: _receipts.length,
+            itemBuilder: (ctx, i) {
+              final r = _receipts[i];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.receipt_long,
+                      color: Colors.amber.shade700,
+                      size: 20,
+                    ),
                   ),
-                  child: Icon(
-                    Icons.receipt_long,
-                    color: Colors.amber.shade700,
-                    size: 20,
+                  title: Text(
+                    r['receipt_number'] ?? 'N/A',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  subtitle: Text(r['prod_name'] ?? 'N/A'),
+                  trailing: Text(
+                    'GH₵ ${(double.tryParse(r['total_amount']?.toString() ?? '0') ?? 0).toStringAsFixed(2)}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
-                title: Text(
-                  r['receipt_number'] ?? 'N/A',
-                  style: const TextStyle(fontWeight: FontWeight.w500),
-                ),
-                subtitle: Text(r['prod_name'] ?? 'N/A'),
-                trailing: Text(
-                  'GH₵ ${(double.tryParse(r['total_amount']?.toString() ?? '0') ?? 0).toStringAsFixed(2)}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-            );
-          },
-        );
+              );
+            },
+          );
   }
 }
 
@@ -718,42 +695,41 @@ class _AdminAttendancePageState extends State<AdminAttendancePage> {
           ),
         ),
         Expanded(
-          child:
-              _loading
-                  ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
-                  )
-                  : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _records.length,
-                    itemBuilder: (ctx, i) {
-                      final r = _records[i];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: ListTile(
-                          leading: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.cyan.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.access_time,
-                              color: Colors.cyan.shade700,
-                              size: 20,
-                            ),
+          child: _loading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _records.length,
+                  itemBuilder: (ctx, i) {
+                    final r = _records[i];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.cyan.shade50,
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          title: Text(
-                            r['employees']?['name'] ?? 'Unknown',
-                            style: const TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          subtitle: Text(
-                            '${r['date'] ?? 'N/A'} · In: ${r['check_in_time'] ?? '-'} · Out: ${r['check_out_time'] ?? '-'}',
+                          child: Icon(
+                            Icons.access_time,
+                            color: Colors.cyan.shade700,
+                            size: 20,
                           ),
                         ),
-                      );
-                    },
-                  ),
+                        title: Text(
+                          r['employees']?['name'] ?? 'Unknown',
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                        subtitle: Text(
+                          '${r['date'] ?? 'N/A'} · In: ${r['check_in_time'] ?? '-'} · Out: ${r['check_out_time'] ?? '-'}',
+                        ),
+                      ),
+                    );
+                  },
+                ),
         ),
       ],
     );
@@ -771,67 +747,64 @@ class _AdminAttendancePageState extends State<AdminAttendancePage> {
     if (!mounted) return;
     showDialog(
       context: context,
-      builder:
-          (_) => StatefulBuilder(
-            builder:
-                (ctx, setSt) => AlertDialog(
-                  title: const Text('Log Attendance'),
-                  content: SizedBox(
-                    width: 400,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        DropdownButtonFormField<String>(
-                          initialValue: empId,
-                          decoration: InputDecoration(
-                            labelText: 'Employee',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          items:
-                              employees
-                                  .map(
-                                    (e) => DropdownMenuItem(
-                                      value: e['id'] as String,
-                                      child: Text(e['name'] as String),
-                                    ),
-                                  )
-                                  .toList(),
-                          onChanged: (v) => setSt(() => empId = v),
-                        ),
-                        const SizedBox(height: 12),
-                        _tf(date, 'Date (YYYY-MM-DD)', Icons.calendar_today),
-                        const SizedBox(height: 12),
-                        _tf(checkIn, 'Check In (HH:MM:SS)', Icons.login),
-                        const SizedBox(height: 12),
-                        _tf(checkOut, 'Check Out (HH:MM:SS)', Icons.logout),
-                      ],
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setSt) => AlertDialog(
+          title: const Text('Log Attendance'),
+          content: SizedBox(
+            width: 400,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: empId,
+                  decoration: InputDecoration(
+                    labelText: 'Employee',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Cancel'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        await SupabaseService.addAttendance({
-                          'employee_id': empId,
-                          'date': date.text,
-                          'check_in_time':
-                              checkIn.text.isEmpty ? null : checkIn.text,
-                          'check_out_time':
-                              checkOut.text.isEmpty ? null : checkOut.text,
-                        });
-                        Navigator.pop(ctx);
-                        _load();
-                      },
-                      child: const Text('Save'),
-                    ),
-                  ],
+                  items: employees
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e['id'] as String,
+                          child: Text(e['name'] as String),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) => setSt(() => empId = v),
                 ),
+                const SizedBox(height: 12),
+                _tf(date, 'Date (YYYY-MM-DD)', Icons.calendar_today),
+                const SizedBox(height: 12),
+                _tf(checkIn, 'Check In (HH:MM:SS)', Icons.login),
+                const SizedBox(height: 12),
+                _tf(checkOut, 'Check Out (HH:MM:SS)', Icons.logout),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await SupabaseService.addAttendance({
+                  'employee_id': empId,
+                  'date': date.text,
+                  'check_in_time': checkIn.text.isEmpty ? null : checkIn.text,
+                  'check_out_time': checkOut.text.isEmpty
+                      ? null
+                      : checkOut.text,
+                });
+                Navigator.pop(ctx);
+                _load();
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

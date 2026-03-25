@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/supabase_service.dart';
+import '../../services/pharmacy_context.dart';
 
 class AdminProductsPage extends StatefulWidget {
   const AdminProductsPage({super.key});
@@ -46,24 +47,21 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
   Future<void> _delete(String id) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder:
-          (_) => AlertDialog(
-            title: const Text('Delete Product'),
-            content: const Text(
-              'Are you sure you want to delete this product?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                child: const Text('Delete'),
-              ),
-            ],
+      builder: (_) => AlertDialog(
+        title: const Text('Delete Product'),
+        content: const Text('Are you sure you want to delete this product?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
           ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
     );
     if (confirm == true) {
       await SupabaseService.deleteProduct(id);
@@ -103,10 +101,9 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
               const SizedBox(width: 12),
               DropdownButton<String>(
                 value: _category,
-                items:
-                    _categories
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                        .toList(),
+                items: _categories
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                    .toList(),
                 onChanged: (v) {
                   setState(() => _category = v!);
                   _load();
@@ -123,39 +120,36 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
         ),
 
         Expanded(
-          child:
-              _loading
-                  ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
-                  )
-                  : RefreshIndicator(
-                    onRefresh: _load,
-                    child: LayoutBuilder(
-                      builder: (ctx, constraints) {
-                        final cols =
-                            constraints.maxWidth > 1100
-                                ? 4
-                                : constraints.maxWidth > 750
-                                ? 3
-                                : constraints.maxWidth > 500
-                                ? 2
-                                : 1;
-                        return GridView.builder(
-                          padding: const EdgeInsets.all(16),
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: cols,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
-                                childAspectRatio: 1.1,
-                              ),
-                          itemCount: _products.length,
-                          itemBuilder:
-                              (ctx, i) => _buildProductCard(_products[i]),
-                        );
-                      },
-                    ),
+          child: _loading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+                )
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: LayoutBuilder(
+                    builder: (ctx, constraints) {
+                      final cols = constraints.maxWidth > 1100
+                          ? 4
+                          : constraints.maxWidth > 750
+                          ? 3
+                          : constraints.maxWidth > 500
+                          ? 2
+                          : 1;
+                      return GridView.builder(
+                        padding: const EdgeInsets.all(16),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: cols,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 1.1,
+                        ),
+                        itemCount: _products.length,
+                        itemBuilder: (ctx, i) =>
+                            _buildProductCard(_products[i]),
+                      );
+                    },
                   ),
+                ),
         ),
       ],
     );
@@ -191,32 +185,28 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                     if (v == 'edit') _showForm(p);
                     if (v == 'delete') _delete(p['id']);
                   },
-                  itemBuilder:
-                      (_) => [
-                        const PopupMenuItem(
-                          value: 'edit',
-                          child: Row(
-                            children: [
-                              Icon(Icons.edit, size: 16),
-                              SizedBox(width: 8),
-                              Text('Edit'),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(Icons.delete, size: 16, color: Colors.red),
-                              SizedBox(width: 8),
-                              Text(
-                                'Delete',
-                                style: TextStyle(color: Colors.red),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                  itemBuilder: (_) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 16),
+                          SizedBox(width: 8),
+                          Text('Edit'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, size: 16, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Delete', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
                   child: const Icon(
                     Icons.more_vert,
                     size: 18,
@@ -255,12 +245,11 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color:
-                        isOut
-                            ? Colors.red.shade50
-                            : isLow
-                            ? Colors.orange.shade50
-                            : Colors.green.shade50,
+                    color: isOut
+                        ? Colors.red.shade50
+                        : isLow
+                        ? Colors.orange.shade50
+                        : Colors.green.shade50,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -270,12 +259,11 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                         ? 'Low: $qty'
                         : 'In stock: $qty',
                     style: TextStyle(
-                      color:
-                          isOut
-                              ? Colors.red.shade700
-                              : isLow
-                              ? Colors.orange.shade700
-                              : Colors.green.shade700,
+                      color: isOut
+                          ? Colors.red.shade700
+                          : isLow
+                          ? Colors.orange.shade700
+                          : Colors.green.shade700,
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
                     ),
@@ -298,6 +286,14 @@ class _ProductDialog extends StatefulWidget {
   State<_ProductDialog> createState() => _ProductDialogState();
 }
 
+Future<String?> _getMyPharmacyId() async {
+  final userId = SupabaseService.currentUserId;
+  if (userId == null) return null;
+
+  final profile = await SupabaseService.getProfile(userId);
+  return profile?['pharmacy_id'] as String?;
+}
+
 class _ProductDialogState extends State<_ProductDialog> {
   final _name = TextEditingController();
   final _desc = TextEditingController();
@@ -305,6 +301,7 @@ class _ProductDialogState extends State<_ProductDialog> {
   final _qty = TextEditingController();
   final _category = TextEditingController();
   final _expiry = TextEditingController();
+  DateTime? _expiryDate;
   bool _requiresPrescription = false;
   bool _saving = false;
   List<Map<String, dynamic>> _suppliers = [];
@@ -320,7 +317,16 @@ class _ProductDialogState extends State<_ProductDialog> {
       _price.text = p['unit_price']?.toString() ?? '';
       _qty.text = p['quantity']?.toString() ?? '';
       _category.text = p['category'] ?? 'General';
-      _expiry.text = p['latest_expiry_date'] ?? '';
+      final rawExpiry = p['latest_expiry_date']?.toString();
+      if (rawExpiry != null && rawExpiry.isNotEmpty) {
+        final parsed = DateTime.tryParse(rawExpiry);
+        if (parsed != null) {
+          _expiryDate = parsed;
+          _expiry.text = _formatDate(parsed);
+        } else {
+          _expiry.text = rawExpiry;
+        }
+      }
       _requiresPrescription = p['requires_prescription'] ?? false;
       _selectedSupplier = p['supplier_id'];
     }
@@ -331,6 +337,7 @@ class _ProductDialogState extends State<_ProductDialog> {
 
   Future<void> _save() async {
     setState(() => _saving = true);
+    final pharmacyId = await _getMyPharmacyId();
     final data = {
       'name': _name.text,
       'description': _desc.text,
@@ -340,15 +347,40 @@ class _ProductDialogState extends State<_ProductDialog> {
       'requires_prescription': _requiresPrescription,
       'latest_expiry_date': _expiry.text.isEmpty ? null : _expiry.text,
       if (_selectedSupplier != null) 'supplier_id': _selectedSupplier,
+      // ⚠️ CRITICAL: Include pharmacy_id for new products
+      if (widget.item == null && pharmacyId != null) 'pharmacy_id': pharmacyId,
     };
     if (widget.item == null) {
-      await SupabaseService.addProduct(data);
-    } else {
-      await SupabaseService.updateProduct(widget.item!['id'], data);
+      final dataWithPharmacy = await PharmacyContext.addPharmacyId(data);
+      await SupabaseService.addProduct(dataWithPharmacy);
     }
     if (mounted) {
       Navigator.pop(context);
       widget.onSaved();
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    final y = date.year.toString().padLeft(4, '0');
+    final m = date.month.toString().padLeft(2, '0');
+    final d = date.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
+
+  Future<void> _pickExpiryDate() async {
+    final now = DateTime.now();
+    final nextYear = DateTime(now.year + 10, now.month, now.day);
+    final chosen = await showDatePicker(
+      context: context,
+      initialDate: _expiryDate ?? now,
+      firstDate: DateTime(now.year - 1),
+      lastDate: nextYear,
+    );
+    if (chosen != null) {
+      setState(() {
+        _expiryDate = chosen;
+        _expiry.text = _formatDate(chosen);
+      });
     }
   }
 
@@ -385,7 +417,17 @@ class _ProductDialogState extends State<_ProductDialog> {
               const SizedBox(height: 12),
               _tf(_category, 'Category', Icons.category),
               const SizedBox(height: 12),
-              _tf(_expiry, 'Expiry Date (YYYY-MM-DD)', Icons.calendar_today),
+              GestureDetector(
+                onTap: _pickExpiryDate,
+                child: AbsorbPointer(
+                  child: _tf(
+                    _expiry,
+                    'Expiry Date (YYYY-MM-DD)',
+                    Icons.calendar_today,
+                    readOnly: true,
+                  ),
+                ),
+              ),
               const SizedBox(height: 12),
               if (_suppliers.isNotEmpty)
                 DropdownButtonFormField<String>(
@@ -397,15 +439,14 @@ class _ProductDialogState extends State<_ProductDialog> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  items:
-                      _suppliers
-                          .map(
-                            (s) => DropdownMenuItem(
-                              value: s['id'] as String,
-                              child: Text(s['name'] as String),
-                            ),
-                          )
-                          .toList(),
+                  items: _suppliers
+                      .map(
+                        (s) => DropdownMenuItem(
+                          value: s['id'] as String,
+                          child: Text(s['name'] as String),
+                        ),
+                      )
+                      .toList(),
                   onChanged: (v) => setState(() => _selectedSupplier = v),
                 ),
               const SizedBox(height: 12),
@@ -430,17 +471,16 @@ class _ProductDialogState extends State<_ProductDialog> {
         ),
         ElevatedButton(
           onPressed: _saving ? null : _save,
-          child:
-              _saving
-                  ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                  : const Text('Save'),
+          child: _saving
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text('Save'),
         ),
       ],
     );
@@ -451,8 +491,10 @@ class _ProductDialogState extends State<_ProductDialog> {
     String label,
     IconData icon, {
     bool isNum = false,
+    bool readOnly = false,
   }) => TextField(
     controller: ctrl,
+    readOnly: readOnly,
     keyboardType: isNum ? TextInputType.number : TextInputType.text,
     decoration: InputDecoration(
       labelText: label,
