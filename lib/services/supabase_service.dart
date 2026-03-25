@@ -3,46 +3,41 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class SupabaseService {
   static SupabaseClient get client => Supabase.instance.client;
 
-  // Simple flag — always true since we initialize in main() before runApp
-  static bool isConfigured = true;
-  static void markConfigured() => isConfigured = true;
-
   // ─── Auth ──────────────────────────────────────────────────────────────────
 
   static User? get currentUser => client.auth.currentUser;
   static String? get currentUserId => currentUser?.id;
-
-  static Stream<AuthState> get authStateChanges =>
-      client.auth.onAuthStateChange;
+  static Stream<AuthState> get authStateChanges => client.auth.onAuthStateChange;
 
   static Future<AuthResponse> signIn(String email, String password) =>
       client.auth.signInWithPassword(email: email, password: password);
 
+  /// Sign up any role. For admin/pharmacist, pass pharmacyId.
   static Future<AuthResponse> signUp({
     required String email,
     required String password,
     required String name,
     String role = 'student',
     String? studentId,
-  }) => client.auth.signUp(
-    email: email,
-    password: password,
-    data: {'name': name, 'role': role, 'student_id': studentId},
-  );
+    String? pharmacyId,
+  }) =>
+      client.auth.signUp(
+        email: email,
+        password: password,
+        data: {
+          'name': name,
+          'role': role,
+          if (studentId != null) 'student_id': studentId,
+          if (pharmacyId != null) 'pharmacy_id': pharmacyId,
+        },
+      );
 
   static Future<void> signOut() => client.auth.signOut();
-
-  static Future<void> resetPassword(String email) =>
-      client.auth.resetPasswordForEmail(email);
 
   // ─── Profile ───────────────────────────────────────────────────────────────
 
   static Future<Map<String, dynamic>?> getProfile(String userId) async {
-    final res = await client
-        .from('profiles')
-        .select()
-        .eq('id', userId)
-        .single();
+    final res = await client.from('profiles').select().eq('id', userId).single();
     return res;
   }
 
@@ -52,30 +47,115 @@ class SupabaseService {
   static Future<List<Map<String, dynamic>>> getAllProfiles() =>
       client.from('profiles').select().order('created_at', ascending: false);
 
+  /// Get all staff (admin/pharmacist) belonging to a specific pharmacy
+  static Future<List<Map<String, dynamic>>> getPharmacyStaff(String pharmacyId) =>
+      client
+          .from('profiles')
+          .select()
+          .eq('pharmacy_id', pharmacyId)
+          .inFilter('role', ['admin', 'pharmacist'])
+          .order('name');
+
   // ─── Dashboard ─────────────────────────────────────────────────────────────
 
+  /// For pharmacy admin / pharmacist — scoped to their pharmacy
   static Future<Map<String, dynamic>> getDashboardStats() async {
     final res = await client.rpc('get_dashboard_stats');
     return Map<String, dynamic>.from(res);
   }
 
+  /// For super admin — network-wide
+  static Future<Map<String, dynamic>> getSuperAdminStats() async {
+    final res = await client.rpc('get_super_admin_stats');
+    return Map<String, dynamic>.from(res);
+  }
+
+  // ─── Pharmacies ────────────────────────────────────────────────────────────
+
+  static Future<List<Map<String, dynamic>>> getPharmacies({bool activeOnly = false}) async {
+    var q = client.from('pharmacies').select();
+    if (activeOnly) q = q.eq('is_active', true);
+    return q.order('name');
+  }
+
+  static Future<Map<String, dynamic>> addPharmacy(Map<String, dynamic> data) async {
+    final res = await client.from('pharmacies').insert(data).select().single();
+    return res;
+  }
+
+  static Future<void> updatePharmacy(String id, Map<String, dynamic> data) =>
+      client.from('pharmacies').update(data).eq('id', id);
+
+  static Future<void> deletePharmacy(String id) =>
+      client.from('pharmacies').delete().eq('id', id);
+
+  /// Super admin: suspend or reactivate a pharmacy
+  static Future<void> setPharmacyStatus(String id, bool isActive) =>
+      client.from('pharmacies').update({'is_active': isActive}).eq('id', id);
+
+  // ─── Pharmacy Reviews ──────────────────────────────────────────────────────
+
+  static Future<List<Map<String, dynamic>>> getPharmacyReviews(String pharmacyId) =>
+      client
+          .from('pharmacy_reviews')
+          .select('*, profiles(name)')
+          .eq('pharmacy_id', pharmacyId)
+          .order('created_at', ascending: false);
+
+  static Future<double> getPharmacyRating(String pharmacyId) async {
+    final res = await client
+        .from('pharmacy_reviews')
+        .select('rating')
+        .eq('pharmacy_id', pharmacyId);
+    if ((res as List).isEmpty) return 0.0;
+    final sum = res.fold<int>(0, (s, r) => s + (r['rating'] as int));
+    return sum / res.length;
+  }
+
+  static Future<Map<String, dynamic>?> getMyReview(String pharmacyId) async {
+    final uid = currentUserId;
+    if (uid == null) return null;
+    try {
+      final res = await client
+          .from('pharmacy_reviews')
+          .select()
+          .eq('pharmacy_id', pharmacyId)
+          .eq('student_id', uid)
+          .single();
+      return res;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> submitReview({
+    required String pharmacyId,
+    required int rating,
+    String? comment,
+  }) async {
+    final uid = currentUserId!;
+    await client.from('pharmacy_reviews').upsert({
+      'pharmacy_id': pharmacyId,
+      'student_id': uid,
+      'rating': rating,
+      'comment': comment,
+    }, onConflict: 'pharmacy_id,student_id');
+  }
+
   // ─── Products ──────────────────────────────────────────────────────────────
 
+  /// Students: can pass pharmacyId filter. Staff: automatically scoped via RLS.
   static Future<List<Map<String, dynamic>>> getProducts({
+    String? pharmacyId,
     String? category,
     String? search,
     bool inStockOnly = false,
   }) async {
-    var query = client.from('products').select('*, suppliers(name)');
-    if (category != null && category != 'All') {
-      query = query.eq('category', category);
-    }
-    if (inStockOnly) {
-      query = query.gt('quantity', 0);
-    }
-    if (search != null && search.isNotEmpty) {
-      query = query.ilike('name', '%$search%');
-    }
+    var query = client.from('products').select('*, pharmacies(id, name)');
+    if (pharmacyId != null) query = query.eq('pharmacy_id', pharmacyId);
+    if (category != null && category != 'All') query = query.eq('category', category);
+    if (inStockOnly) query = query.gt('quantity', 0);
+    if (search != null && search.isNotEmpty) query = query.ilike('name', '%$search%');
     return query.order('name');
   }
 
@@ -88,21 +168,23 @@ class SupabaseService {
   static Future<void> deleteProduct(String id) =>
       client.from('products').delete().eq('id', id);
 
-  static Future<List<String>> getProductCategories() async {
-    final res = await client.from('products').select('category');
-    final categories =
-        (res as List)
-            .map((e) => e['category'] as String? ?? 'General')
-            .toSet()
-            .toList()
-          ..sort();
-    return ['All', ...categories];
+  static Future<List<String>> getProductCategories({String? pharmacyId}) async {
+    var q = client.from('products').select('category');
+    if (pharmacyId != null) q = q.eq('pharmacy_id', pharmacyId);
+    final res = await q;
+    final cats = (res as List)
+        .map((e) => e['category'] as String? ?? 'General')
+        .toSet()
+        .toList()
+      ..sort();
+    return ['All', ...cats];
   }
 
   // ─── Orders ────────────────────────────────────────────────────────────────
 
   static Future<Map<String, dynamic>> createOrder({
     required String studentId,
+    required String pharmacyId,
     required List<Map<String, dynamic>> items,
     required double totalAmount,
     required String paymentMethod,
@@ -110,11 +192,11 @@ class SupabaseService {
     String? deliveryAddress,
     String? notes,
   }) async {
-    // Create the order
     final order = await client
         .from('orders')
         .insert({
           'student_id': studentId,
+          'pharmacy_id': pharmacyId,
           'total_amount': totalAmount,
           'payment_method': paymentMethod,
           'delivery_method': deliveryMethod,
@@ -125,42 +207,32 @@ class SupabaseService {
         .select()
         .single();
 
-    // Insert order items
     final orderItems = items
-        .map(
-          (item) => {
-            'order_id': order['id'],
-            'product_id': item['product_id'],
-            'product_name': item['product_name'],
-            'quantity': item['quantity'],
-            'unit_price': item['unit_price'],
-          },
-        )
+        .map((item) => {
+              'order_id': order['id'],
+              'product_id': item['product_id'],
+              'product_name': item['product_name'],
+              'quantity': item['quantity'],
+              'unit_price': item['unit_price'],
+            })
         .toList();
     await client.from('order_items').insert(orderItems);
-
     return order;
   }
 
-  static Future<List<Map<String, dynamic>>> getStudentOrders(
-    String studentId,
-  ) => client
-      .from('orders')
-      .select('*, order_items(*, products(name, image_url))')
-      .eq('student_id', studentId)
-      .order('created_at', ascending: false);
+  static Future<List<Map<String, dynamic>>> getStudentOrders(String studentId) =>
+      client
+          .from('orders')
+          .select('*, pharmacies(name), order_items(*, products(name))')
+          .eq('student_id', studentId)
+          .order('created_at', ascending: false);
 
-  static Future<List<Map<String, dynamic>>> getAllOrders({
-    String? status,
-  }) async {
+  /// Pharmacy-scoped (RLS handles filtering automatically)
+  static Future<List<Map<String, dynamic>>> getAllOrders({String? status}) async {
     var query = client
         .from('orders')
-        .select(
-          '*, profiles(name, email, student_id), order_items(*, products(name))',
-        );
-    if (status != null && status != 'All') {
-      query = query.eq('status', status);
-    }
+        .select('*, pharmacies(name), profiles(name, email, student_id), order_items(*)');
+    if (status != null && status != 'All') query = query.eq('status', status);
     return query.order('created_at', ascending: false);
   }
 
@@ -171,38 +243,17 @@ class SupabaseService {
         .eq('id', orderId)
         .select();
     if ((res as List).isEmpty) {
-      throw Exception(
-        'Update blocked — RLS policy denied the request. Run fix_orders_rls.sql in Supabase.',
-      );
+      throw Exception('Update blocked — RLS policy denied the request.');
     }
   }
 
-  static Future<Map<String, dynamic>> getOrderById(String orderId) => client
-      .from('orders')
-      .select(
-        '*, profiles(name, email, contact), order_items(*, products(name, unit_price))',
-      )
-      .eq('id', orderId)
-      .single();
-
-  // ─── Pharmacies ────────────────────────────────────────────────────────────
-
-  static Future<List<Map<String, dynamic>>> getPharmacies() =>
-      client.from('pharmacies').select().order('name');
-
-  static Future<void> addPharmacy(Map<String, dynamic> data) =>
-      client.from('pharmacies').insert(data);
-
-  static Future<void> updatePharmacy(String id, Map<String, dynamic> data) =>
-      client.from('pharmacies').update(data).eq('id', id);
-
-  static Future<void> deletePharmacy(String id) =>
-      client.from('pharmacies').delete().eq('id', id);
-
   // ─── Branches ──────────────────────────────────────────────────────────────
 
-  static Future<List<Map<String, dynamic>>> getBranches() =>
-      client.from('branches').select('*, pharmacies(name)').order('name');
+  static Future<List<Map<String, dynamic>>> getBranches({String? pharmacyId}) async {
+    var q = client.from('branches').select('*, pharmacies(name)');
+    if (pharmacyId != null) q = q.eq('pharmacy_id', pharmacyId);
+    return q.order('name');
+  }
 
   static Future<void> addBranch(Map<String, dynamic> data) =>
       client.from('branches').insert(data);
@@ -215,8 +266,11 @@ class SupabaseService {
 
   // ─── Employees ─────────────────────────────────────────────────────────────
 
-  static Future<List<Map<String, dynamic>>> getEmployees() =>
-      client.from('employees').select('*, branches(name)').order('name');
+  static Future<List<Map<String, dynamic>>> getEmployees({String? pharmacyId}) async {
+    var q = client.from('employees').select('*, branches(name)');
+    if (pharmacyId != null) q = q.eq('pharmacy_id', pharmacyId);
+    return q.order('name');
+  }
 
   static Future<void> addEmployee(Map<String, dynamic> data) =>
       client.from('employees').insert(data);
@@ -229,8 +283,11 @@ class SupabaseService {
 
   // ─── Suppliers ─────────────────────────────────────────────────────────────
 
-  static Future<List<Map<String, dynamic>>> getSuppliers() =>
-      client.from('suppliers').select().order('name');
+  static Future<List<Map<String, dynamic>>> getSuppliers({String? pharmacyId}) async {
+    var q = client.from('suppliers').select();
+    if (pharmacyId != null) q = q.eq('pharmacy_id', pharmacyId);
+    return q.order('name');
+  }
 
   static Future<void> addSupplier(Map<String, dynamic> data) =>
       client.from('suppliers').insert(data);
@@ -243,28 +300,36 @@ class SupabaseService {
 
   // ─── Sales ─────────────────────────────────────────────────────────────────
 
-  static Future<List<Map<String, dynamic>>> getSales() => client
-      .from('sales')
-      .select('*, employees(name), profiles(name)')
-      .order('created_at', ascending: false);
+  static Future<List<Map<String, dynamic>>> getSales({String? pharmacyId}) async {
+    var q = client.from('sales').select('*, employees(name), profiles(name)');
+    if (pharmacyId != null) q = q.eq('pharmacy_id', pharmacyId);
+    return q.order('created_at', ascending: false);
+  }
 
   static Future<void> addSale(Map<String, dynamic> data) =>
       client.from('sales').insert(data);
 
   // ─── Receipts ──────────────────────────────────────────────────────────────
 
-  static Future<List<Map<String, dynamic>>> getReceipts() =>
-      client.from('receipts').select().order('created_at', ascending: false);
+  static Future<List<Map<String, dynamic>>> getReceipts({String? pharmacyId}) async {
+    var q = client.from('receipts').select();
+    if (pharmacyId != null) q = q.eq('pharmacy_id', pharmacyId);
+    return q.order('created_at', ascending: false);
+  }
 
   static Future<void> addReceipt(Map<String, dynamic> data) =>
       client.from('receipts').insert(data);
 
   // ─── Attendance ────────────────────────────────────────────────────────────
 
-  static Future<List<Map<String, dynamic>>> getAttendance() => client
-      .from('attendance')
-      .select('*, employees(name)')
-      .order('date', ascending: false);
+  static Future<List<Map<String, dynamic>>> getAttendance({String? pharmacyId}) async {
+    // Join through employees to get pharmacy scoping
+    var q = client.from('attendance').select('*, employees!inner(name, pharmacy_id)');
+    if (pharmacyId != null) {
+      q = q.eq('employees.pharmacy_id', pharmacyId);
+    }
+    return q.order('date', ascending: false);
+  }
 
   static Future<void> addAttendance(Map<String, dynamic> data) =>
       client.from('attendance').insert(data);
@@ -285,10 +350,8 @@ class SupabaseService {
   static Future<void> markNotificationRead(String id) =>
       client.from('notifications').update({'is_read': true}).eq('id', id);
 
-  static Future<void> markAllNotificationsRead(String userId) => client
-      .from('notifications')
-      .update({'is_read': true})
-      .eq('user_id', userId);
+  static Future<void> markAllNotificationsRead(String userId) =>
+      client.from('notifications').update({'is_read': true}).eq('user_id', userId);
 
   static Future<int> getUnreadCount(String userId) async {
     final res = await client
@@ -301,31 +364,33 @@ class SupabaseService {
 
   // ─── Realtime ──────────────────────────────────────────────────────────────
 
-  static RealtimeChannel subscribeToOrders(Function(dynamic) onUpdate) => client
-      .channel('orders-channel')
-      .onPostgresChanges(
-        event: PostgresChangeEvent.all,
-        schema: 'public',
-        table: 'orders',
-        callback: (payload) => onUpdate(payload),
-      )
-      .subscribe();
+  static RealtimeChannel subscribeToOrders(Function(dynamic) onUpdate) =>
+      client
+          .channel('orders-channel')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'orders',
+            callback: (payload) => onUpdate(payload),
+          )
+          .subscribe();
 
   static RealtimeChannel subscribeToNotifications(
     String userId,
     Function(dynamic) onInsert,
-  ) => client
-      .channel('notifications-$userId')
-      .onPostgresChanges(
-        event: PostgresChangeEvent.insert,
-        schema: 'public',
-        table: 'notifications',
-        filter: PostgresChangeFilter(
-          type: PostgresChangeFilterType.eq,
-          column: 'user_id',
-          value: userId,
-        ),
-        callback: (payload) => onInsert(payload),
-      )
-      .subscribe();
+  ) =>
+      client
+          .channel('notifications-$userId')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'public',
+            table: 'notifications',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_id',
+              value: userId,
+            ),
+            callback: (payload) => onInsert(payload),
+          )
+          .subscribe();
 }

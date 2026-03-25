@@ -207,6 +207,7 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
     setState(() => _placingOrder = true);
     try {
       await SupabaseService.createOrder(
+        pharmacyId: widget.cart.first['pharmacy_id'] as String,
         studentId: uid,
         items: widget.cart,
         totalAmount: _total,

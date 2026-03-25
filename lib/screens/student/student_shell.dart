@@ -80,6 +80,8 @@ class _StudentShellState extends State<StudentShell> {
             (_cart[existingIdx]['quantity'] as int) + quantity;
       } else {
         _cart.add({
+          'pharmacy_id': product['pharmacy_id'],
+          'pharmacy_name': product['pharmacies']?['name'],
           'product_id': product['id'],
           'product_name': product['name'],
           'unit_price': product['unit_price'],
