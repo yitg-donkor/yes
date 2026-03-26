@@ -22,7 +22,11 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
   Future<void> _load() async {
     setState(() => _loading = true);
     final list = await SupabaseService.getPharmacies();
-    if (mounted) setState(() { _pharmacies = list; _loading = false; });
+    if (mounted)
+      setState(() {
+        _pharmacies = list;
+        _loading = false;
+      });
   }
 
   @override
@@ -35,8 +39,10 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
           color: Colors.white,
           child: Row(
             children: [
-              Text('${_pharmacies.length} pharmacies on network',
-                  style: TextStyle(color: Colors.grey.shade600)),
+              Text(
+                '${_pharmacies.length} pharmacies on network',
+                style: TextStyle(color: Colors.grey.shade600),
+              ),
               const Spacer(),
               ElevatedButton.icon(
                 onPressed: _showOnboardDialog,
@@ -53,18 +59,18 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
         Expanded(
           child: _loading
               ? const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF1565C0)))
+                  child: CircularProgressIndicator(color: Color(0xFF1565C0)),
+                )
               : _pharmacies.isEmpty
-                  ? _buildEmpty()
-                  : RefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _pharmacies.length,
-                        itemBuilder: (ctx, i) =>
-                            _buildPharmacyCard(_pharmacies[i]),
-                      ),
-                    ),
+              ? _buildEmpty()
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _pharmacies.length,
+                    itemBuilder: (ctx, i) => _buildPharmacyCard(_pharmacies[i]),
+                  ),
+                ),
         ),
       ],
     );
@@ -75,18 +81,24 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.local_pharmacy_outlined,
-              size: 80, color: Colors.grey.shade300),
+          Icon(
+            Icons.local_pharmacy_outlined,
+            size: 80,
+            color: Colors.grey.shade300,
+          ),
           const SizedBox(height: 16),
-          Text('No pharmacies yet',
-              style: TextStyle(fontSize: 18, color: Colors.grey.shade400)),
+          Text(
+            'No pharmacies yet',
+            style: TextStyle(fontSize: 18, color: Colors.grey.shade400),
+          ),
           const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: _showOnboardDialog,
             icon: const Icon(Icons.add_business),
             label: const Text('Onboard First Pharmacy'),
             style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1565C0)),
+              backgroundColor: const Color(0xFF1565C0),
+            ),
           ),
         ],
       ),
@@ -116,9 +128,7 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
                   ),
                   child: Icon(
                     Icons.local_pharmacy,
-                    color: isActive
-                        ? const Color(0xFF2E7D32)
-                        : Colors.grey,
+                    color: isActive ? const Color(0xFF2E7D32) : Colors.grey,
                     size: 22,
                   ),
                 ),
@@ -127,12 +137,20 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(p['name'] ?? '',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16)),
-                      Text(p['address'] ?? '',
-                          style: TextStyle(
-                              color: Colors.grey.shade500, fontSize: 12)),
+                      Text(
+                        p['name'] ?? '',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        p['address'] ?? '',
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -145,21 +163,29 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
             Row(
               children: [
                 if (p['contact'] != null && p['contact'] != '') ...[
-                  Icon(Icons.phone_outlined,
-                      size: 14, color: Colors.grey.shade400),
+                  Icon(
+                    Icons.phone_outlined,
+                    size: 14,
+                    color: Colors.grey.shade400,
+                  ),
                   const SizedBox(width: 4),
-                  Text(p['contact'],
-                      style: TextStyle(
-                          color: Colors.grey.shade500, fontSize: 12)),
+                  Text(
+                    p['contact'],
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                  ),
                   const SizedBox(width: 16),
                 ],
                 if (p['email'] != null && p['email'] != '') ...[
-                  Icon(Icons.email_outlined,
-                      size: 14, color: Colors.grey.shade400),
+                  Icon(
+                    Icons.email_outlined,
+                    size: 14,
+                    color: Colors.grey.shade400,
+                  ),
                   const SizedBox(width: 4),
-                  Text(p['email'],
-                      style: TextStyle(
-                          color: Colors.grey.shade500, fontSize: 12)),
+                  Text(
+                    p['email'],
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                  ),
                 ],
               ],
             ),
@@ -184,7 +210,9 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
                 ),
                 _actionBtn(
                   isActive ? 'Suspend' : 'Reactivate',
-                  isActive ? Icons.pause_circle_outline : Icons.play_circle_outline,
+                  isActive
+                      ? Icons.pause_circle_outline
+                      : Icons.play_circle_outline,
                   isActive ? Colors.red : Colors.green,
                   () => _toggleStatus(id, isActive),
                 ),
@@ -215,7 +243,11 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
   }
 
   Widget _actionBtn(
-      String label, IconData icon, Color color, VoidCallback onTap) {
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return OutlinedButton.icon(
       onPressed: onTap,
       icon: Icon(icon, size: 14),
@@ -223,8 +255,7 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
       style: OutlinedButton.styleFrom(
         foregroundColor: color,
         side: BorderSide(color: color.withOpacity(0.5)),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
   }
@@ -242,11 +273,13 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
       context: context,
       builder: (_) => StatefulBuilder(
         builder: (ctx, setSt) => AlertDialog(
-          title: const Row(children: [
-            Icon(Icons.add_business, color: Color(0xFF1565C0)),
-            SizedBox(width: 10),
-            Text('Onboard New Pharmacy'),
-          ]),
+          title: const Row(
+            children: [
+              Icon(Icons.add_business, color: Color(0xFF1565C0)),
+              SizedBox(width: 10),
+              Text('Onboard New Pharmacy'),
+            ],
+          ),
           content: SizedBox(
             width: 420,
             child: Column(
@@ -286,7 +319,8 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                                '${name.text} onboarded successfully!'),
+                              '${name.text} onboarded successfully!',
+                            ),
                             backgroundColor: Colors.green,
                           ),
                         );
@@ -294,8 +328,9 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
                         setSt(() => saving = false);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                              content: Text('Error: $e'),
-                              backgroundColor: Colors.red),
+                            content: Text('Error: $e'),
+                            backgroundColor: Colors.red,
+                          ),
                         );
                       }
                     },
@@ -304,11 +339,15 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
                       width: 14,
                       height: 14,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                   : const Icon(Icons.check, size: 16),
               label: const Text('Onboard'),
               style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1565C0)),
+                backgroundColor: const Color(0xFF1565C0),
+              ),
             ),
           ],
         ),
@@ -345,8 +384,9 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () async {
               await SupabaseService.updatePharmacy(p['id'], {
@@ -378,24 +418,29 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
       context: context,
       builder: (_) => StatefulBuilder(
         builder: (ctx, setSt) => AlertDialog(
-          title: Row(children: [
-            const Icon(Icons.person_add, color: Color(0xFF2E7D32)),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Create Pharmacy Admin'),
-                  Text(pharmacyName,
+          title: Row(
+            children: [
+              const Icon(Icons.person_add, color: Color(0xFF2E7D32)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Create Pharmacy Admin'),
+                    Text(
+                      pharmacyName,
                       style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade500,
-                          fontWeight: FontWeight.normal)),
-                ],
+                        fontSize: 12,
+                        color: Colors.grey.shade500,
+                        fontWeight: FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ]),
+            ],
+          ),
           content: SizedBox(
             width: 400,
             child: Column(
@@ -409,8 +454,7 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
                   ),
                   child: Text(
                     'This admin will only have access to $pharmacyName\'s data.',
-                    style: TextStyle(
-                        color: Colors.blue.shade700, fontSize: 13),
+                    style: TextStyle(color: Colors.blue.shade700, fontSize: 13),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -425,11 +469,12 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
                     labelText: 'Temporary Password',
                     prefixIcon: const Icon(Icons.lock_outline),
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                     suffixIcon: IconButton(
-                      icon: Icon(obscure
-                          ? Icons.visibility_off
-                          : Icons.visibility),
+                      icon: Icon(
+                        obscure ? Icons.visibility_off : Icons.visibility,
+                      ),
                       onPressed: () => setSt(() => obscure = !obscure),
                     ),
                   ),
@@ -439,8 +484,9 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
           ),
           actions: [
             TextButton(
-                onPressed: saving ? null : () => Navigator.pop(ctx),
-                child: const Text('Cancel')),
+              onPressed: saving ? null : () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
             ElevatedButton.icon(
               onPressed: saving
                   ? null
@@ -450,9 +496,11 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
                           passCtrl.text.length < 6) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                              content: Text(
-                                  'Fill all fields. Password min 6 chars.'),
-                              backgroundColor: Colors.red),
+                            content: Text(
+                              'Fill all fields. Password min 6 chars.',
+                            ),
+                            backgroundColor: Colors.red,
+                          ),
                         );
                         return;
                       }
@@ -469,7 +517,8 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                                'Admin account created for ${nameCtrl.text}'),
+                              'Admin account created for ${nameCtrl.text}',
+                            ),
                             backgroundColor: Colors.green,
                           ),
                         );
@@ -477,8 +526,9 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
                         setSt(() => saving = false);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                              content: Text('Error: $e'),
-                              backgroundColor: Colors.red),
+                            content: Text('Error: $e'),
+                            backgroundColor: Colors.red,
+                          ),
                         );
                       }
                     },
@@ -487,11 +537,15 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
                       width: 14,
                       height: 14,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                   : const Icon(Icons.check, size: 16),
               label: const Text('Create Admin'),
               style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2E7D32)),
+                backgroundColor: const Color(0xFF2E7D32),
+              ),
             ),
           ],
         ),
@@ -506,7 +560,9 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text(currentlyActive ? 'Suspend Pharmacy' : 'Reactivate Pharmacy'),
+        title: Text(
+          currentlyActive ? 'Suspend Pharmacy' : 'Reactivate Pharmacy',
+        ),
         content: Text(
           currentlyActive
               ? 'Suspending will prevent students from placing new orders. Existing orders remain. Continue?'
@@ -514,13 +570,14 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    currentlyActive ? Colors.red : Colors.green),
+              backgroundColor: currentlyActive ? Colors.red : Colors.green,
+            ),
             child: Text(currentlyActive ? 'Suspend' : 'Reactivate'),
           ),
         ],
@@ -532,21 +589,19 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-            'Pharmacy ${currentlyActive ? 'suspended' : 'reactivated'}.'),
-        backgroundColor:
-            currentlyActive ? Colors.red : Colors.green,
+          'Pharmacy ${currentlyActive ? 'suspended' : 'reactivated'}.',
+        ),
+        backgroundColor: currentlyActive ? Colors.red : Colors.green,
       ),
     );
   }
 
-  Widget _tf(TextEditingController c, String label, IconData icon) =>
-      TextField(
-        controller: c,
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon),
-          border:
-              OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
+  Widget _tf(TextEditingController c, String label, IconData icon) => TextField(
+    controller: c,
+    decoration: InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+    ),
+  );
 }
