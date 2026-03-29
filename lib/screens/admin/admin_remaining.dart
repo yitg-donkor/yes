@@ -1,10 +1,10 @@
 // admin_remaining.dart — fixed version
 import 'package:flutter/material.dart';
-import 'package:yes/services/pharmacy_context.dart';
+import 'package:group_9/services/pharmacy_context.dart';
 import '../../services/supabase_service.dart';
 import 'generic_crud_page.dart';
 
-// ─── admin_branches.dart 
+// ─── admin_branches.dart
 
 class AdminBranchesPage extends StatelessWidget {
   const AdminBranchesPage({super.key});

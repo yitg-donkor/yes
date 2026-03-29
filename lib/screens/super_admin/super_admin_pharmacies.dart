@@ -506,13 +506,14 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
                       }
                       setSt(() => saving = true);
                       try {
-                        await SupabaseService.signUp(
+                        await SupabaseService.createStaffAccount(
                           email: emailCtrl.text.trim(),
                           password: passCtrl.text,
                           name: nameCtrl.text.trim(),
                           role: 'admin',
                           pharmacyId: pharmacyId,
                         );
+                        ;
                         Navigator.pop(ctx);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(

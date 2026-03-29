@@ -1,4 +1,4 @@
-name: yes
+name: group_9
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -36,6 +36,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   supabase_flutter: ^2.12.0
   flutter_dotenv: ^6.0.0
+  http: ^1.6.0
+  image_picker: ^1.2.1
 
 dev_dependencies:
   flutter_test:

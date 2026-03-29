@@ -89,12 +89,13 @@ class _StudentShellState extends State<StudentShell> {
         });
       }
     });
+    ScaffoldMessenger.of(context).clearSnackBars();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${product['name']} added to cart'),
         backgroundColor: const Color(0xFF2E7D32),
-        duration: const Duration(seconds: 1),
+        duration: const Duration(seconds: 2),
         action: SnackBarAction(
           label: 'View Cart',
           textColor: Colors.white,

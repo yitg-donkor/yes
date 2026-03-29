@@ -3,7 +3,6 @@ import '../../services/supabase_service.dart';
 import 'admin_create_staff.dart';
 import 'admin_dashboard.dart';
 import 'admin_orders.dart';
-import 'admin_pharmacies.dart';
 import 'admin_products.dart';
 import 'admin_remaining.dart';
 
@@ -22,26 +21,78 @@ class _AdminShellState extends State<AdminShell> {
 
   bool get _isAdmin => widget.portalType == AdminPortalType.admin;
 
+  // ── Admin nav: Pharmacies removed — admin manages Branches and Staff only ──
   late final List<_NavItem> _navItems = _isAdmin
       ? [
-          _NavItem(Icons.dashboard_rounded, 'Dashboard', const Color(0xFF1565C0)),
-          _NavItem(Icons.shopping_bag_rounded, 'Orders', const Color(0xFFE65100)),
-          _NavItem(Icons.inventory_2_rounded, 'Products', const Color(0xFF6A1B9A)),
-          _NavItem(Icons.local_pharmacy_rounded, 'Pharmacies', const Color(0xFF2E7D32)),
-          _NavItem(Icons.location_on_rounded, 'Branches', const Color(0xFF00838F)),
+          _NavItem(
+            Icons.dashboard_rounded,
+            'Dashboard',
+            const Color(0xFF1565C0),
+          ),
+          _NavItem(
+            Icons.shopping_bag_rounded,
+            'Orders',
+            const Color(0xFFE65100),
+          ),
+          _NavItem(
+            Icons.inventory_2_rounded,
+            'Products',
+            const Color(0xFF6A1B9A),
+          ),
+          _NavItem(
+            Icons.location_on_rounded,
+            'Branches',
+            const Color(0xFF00838F),
+          ),
           _NavItem(Icons.badge_rounded, 'Employees', const Color(0xFFF57F17)),
-          _NavItem(Icons.local_shipping_rounded, 'Suppliers', const Color(0xFF558B2F)),
+          _NavItem(
+            Icons.local_shipping_rounded,
+            'Suppliers',
+            const Color(0xFF558B2F),
+          ),
           _NavItem(Icons.people_rounded, 'Customers', const Color(0xFFC2185B)),
-          _NavItem(Icons.point_of_sale_rounded, 'Sales', const Color(0xFFB71C1C)),
-          _NavItem(Icons.receipt_long_rounded, 'Receipts', const Color(0xFF4E342E)),
-          _NavItem(Icons.access_time_rounded, 'Attendance', const Color(0xFF0277BD)),
+          _NavItem(
+            Icons.point_of_sale_rounded,
+            'Sales',
+            const Color(0xFFB71C1C),
+          ),
+          _NavItem(
+            Icons.receipt_long_rounded,
+            'Receipts',
+            const Color(0xFF4E342E),
+          ),
+          _NavItem(
+            Icons.access_time_rounded,
+            'Attendance',
+            const Color(0xFF0277BD),
+          ),
         ]
       : [
-          _NavItem(Icons.dashboard_rounded, 'Dashboard', const Color(0xFF1565C0)),
-          _NavItem(Icons.shopping_bag_rounded, 'Orders', const Color(0xFFE65100)),
-          _NavItem(Icons.inventory_2_rounded, 'Products', const Color(0xFF6A1B9A)),
-          _NavItem(Icons.point_of_sale_rounded, 'Sales', const Color(0xFFB71C1C)),
-          _NavItem(Icons.access_time_rounded, 'Attendance', const Color(0xFF0277BD)),
+          _NavItem(
+            Icons.dashboard_rounded,
+            'Dashboard',
+            const Color(0xFF1565C0),
+          ),
+          _NavItem(
+            Icons.shopping_bag_rounded,
+            'Orders',
+            const Color(0xFFE65100),
+          ),
+          _NavItem(
+            Icons.inventory_2_rounded,
+            'Products',
+            const Color(0xFF6A1B9A),
+          ),
+          _NavItem(
+            Icons.point_of_sale_rounded,
+            'Sales',
+            const Color(0xFFB71C1C),
+          ),
+          _NavItem(
+            Icons.access_time_rounded,
+            'Attendance',
+            const Color(0xFF0277BD),
+          ),
         ];
 
   late final List<Widget> _pages = _isAdmin
@@ -49,8 +100,7 @@ class _AdminShellState extends State<AdminShell> {
           AdminDashboard(),
           AdminOrdersPage(),
           AdminProductsPage(),
-          AdminPharmaciesPage(),
-          AdminBranchesPage(),
+          AdminBranchesPage(), // was index 4 (after Pharmacies); now index 3
           AdminEmployeesPage(),
           AdminSuppliersPage(),
           AdminCustomersPage(),
@@ -95,10 +145,10 @@ class _AdminShellState extends State<AdminShell> {
   }
 
   Widget _buildSidebar() => Container(
-        width: 240,
-        color: const Color(0xFF1A2035),
-        child: _buildSidebarContent(),
-      );
+    width: 240,
+    color: const Color(0xFF1A2035),
+    child: _buildSidebarContent(),
+  );
 
   Widget _buildSidebarContent() {
     return Container(
@@ -118,22 +168,30 @@ class _AdminShellState extends State<AdminShell> {
                     color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.local_pharmacy,
-                      color: Colors.white, size: 24),
+                  child: const Icon(
+                    Icons.local_pharmacy,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Pharma One',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16)),
+                    const Text(
+                      'Pharma One',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
                     Text(
                       _isAdmin ? 'Admin Portal' : 'Worker Portal',
                       style: const TextStyle(
-                          color: Colors.white70, fontSize: 12),
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -151,8 +209,10 @@ class _AdminShellState extends State<AdminShell> {
                 final selected = _selectedIndex == i;
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: selected
                         ? item.color.withOpacity(0.2)
@@ -170,8 +230,7 @@ class _AdminShellState extends State<AdminShell> {
                             : Colors.white.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child:
-                          Icon(item.icon, color: Colors.white, size: 18),
+                      child: Icon(item.icon, color: Colors.white, size: 18),
                     ),
                     title: Text(
                       item.title,
@@ -200,12 +259,18 @@ class _AdminShellState extends State<AdminShell> {
             padding: const EdgeInsets.all(16),
             child: ListTile(
               dense: true,
-              leading: const Icon(Icons.logout,
-                  color: Colors.white54, size: 20),
-              title: const Text('Sign Out',
-                  style: TextStyle(color: Colors.white54, fontSize: 13)),
+              leading: const Icon(
+                Icons.logout,
+                color: Colors.white54,
+                size: 20,
+              ),
+              title: const Text(
+                'Sign Out',
+                style: TextStyle(color: Colors.white54, fontSize: 13),
+              ),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+                borderRadius: BorderRadius.circular(10),
+              ),
               onTap: () async => await SupabaseService.signOut(),
             ),
           ),
@@ -232,15 +297,13 @@ class _AdminShellState extends State<AdminShell> {
             ),
           Text(
             _navItems[_selectedIndex.clamp(0, _navItems.length - 1)].title,
-            style: const TextStyle(
-                fontSize: 20, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const Spacer(),
 
           // Live indicator
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: Colors.green.shade50,
               borderRadius: BorderRadius.circular(20),
@@ -253,14 +316,19 @@ class _AdminShellState extends State<AdminShell> {
                   width: 8,
                   height: 8,
                   decoration: const BoxDecoration(
-                      color: Colors.green, shape: BoxShape.circle),
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                  ),
                 ),
                 const SizedBox(width: 6),
-                Text('Live',
-                    style: TextStyle(
-                        color: Colors.green.shade700,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600)),
+                Text(
+                  'Live',
+                  style: TextStyle(
+                    color: Colors.green.shade700,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
           ),
@@ -274,11 +342,12 @@ class _AdminShellState extends State<AdminShell> {
                 builder: (_) => const CreateStaffDialog(),
               ),
               icon: const Icon(Icons.person_add, size: 16),
-              label: const Text('Add Staff',
-                  style: TextStyle(fontSize: 13)),
+              label: const Text('Add Staff', style: TextStyle(fontSize: 13)),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 10),
+                  horizontal: 14,
+                  vertical: 10,
+                ),
               ),
             ),
           ],
@@ -288,25 +357,32 @@ class _AdminShellState extends State<AdminShell> {
           // Profile avatar
           FutureBuilder<Map<String, dynamic>?>(
             future: SupabaseService.getProfile(
-                SupabaseService.currentUserId ?? ''),
+              SupabaseService.currentUserId ?? '',
+            ),
             builder: (context, snap) {
               final name = snap.data?['name'] ?? 'Staff';
-              final initial =
-                  name.isNotEmpty ? name[0].toUpperCase() : 'S';
+              final initial = name.isNotEmpty ? name[0].toUpperCase() : 'S';
               return Row(
                 children: [
                   CircleAvatar(
                     radius: 18,
                     backgroundColor: const Color(0xFF2E7D32),
-                    child: Text(initial,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold)),
+                    child: Text(
+                      initial,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 8),
-                  Text(name,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w500, fontSize: 14)),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                  ),
                 ],
               );
             },

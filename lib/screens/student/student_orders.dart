@@ -31,7 +31,7 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
   List<Map<String, dynamic>> _orders = [];
   bool _loadingOrders = true;
   bool _placingOrder = false;
-  String? _selectedOrderId; // for expanded detail view
+  String? _selectedOrderId;
 
   RealtimeChannel? _ordersChannel;
 
@@ -55,7 +55,6 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
   void _setupRealtime() {
     final uid = SupabaseService.currentUserId;
     if (uid == null) return;
-    // Re-load orders whenever a change happens to the orders table
     _ordersChannel = SupabaseService.subscribeToOrders((_) {
       if (mounted) _loadOrders();
     });
@@ -69,19 +68,23 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
     }
     try {
       final orders = await SupabaseService.getStudentOrders(uid);
-      if (mounted) setState(() { _orders = orders; _loadingOrders = false; });
+      if (mounted)
+        setState(() {
+          _orders = orders;
+          _loadingOrders = false;
+        });
     } catch (e) {
       if (mounted) setState(() => _loadingOrders = false);
     }
   }
 
   double get _total => widget.cart.fold(
-        0,
-        (sum, item) =>
-            sum +
-            ((double.tryParse(item['unit_price']?.toString() ?? '0') ?? 0) *
-                (item['quantity'] as int? ?? 1)),
-      );
+    0,
+    (sum, item) =>
+        sum +
+        ((double.tryParse(item['unit_price']?.toString() ?? '0') ?? 0) *
+            (item['quantity'] as int? ?? 1)),
+  );
 
   Future<void> _placeOrder() async {
     if (widget.cart.isEmpty) return;
@@ -113,7 +116,6 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Order summary
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -124,8 +126,11 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ...widget.cart.map((item) {
-                    final price = double.tryParse(
-                            item['unit_price']?.toString() ?? '0') ?? 0;
+                    final price =
+                        double.tryParse(
+                          item['unit_price']?.toString() ?? '0',
+                        ) ??
+                        0;
                     final qty = item['quantity'] as int? ?? 1;
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 4),
@@ -150,14 +155,17 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Total',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Total',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       Text(
                         'GH₵ ${_total.toStringAsFixed(2)}',
                         style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2E7D32),
-                            fontSize: 16),
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2E7D32),
+                          fontSize: 16,
+                        ),
                       ),
                     ],
                   ),
@@ -165,27 +173,39 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
               ),
             ),
             const SizedBox(height: 12),
-            Row(children: [
-              const Icon(Icons.local_shipping_outlined,
-                  size: 16, color: Colors.grey),
-              const SizedBox(width: 6),
-              Text(
-                _delivery == 'pickup'
-                    ? 'Pickup from pharmacy'
-                    : 'Delivery to: ${_addressCtrl.text}',
-                style: const TextStyle(fontSize: 13),
-              ),
-            ]),
+            Row(
+              children: [
+                const Icon(
+                  Icons.local_shipping_outlined,
+                  size: 16,
+                  color: Colors.grey,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    _delivery == 'pickup'
+                        ? 'Pickup from pharmacy'
+                        : 'Delivery to: ${_addressCtrl.text}',
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 6),
-            Row(children: [
-              const Icon(Icons.payment_outlined,
-                  size: 16, color: Colors.grey),
-              const SizedBox(width: 6),
-              Text(
-                _paymentLabel(_payment),
-                style: const TextStyle(fontSize: 13),
-              ),
-            ]),
+            Row(
+              children: [
+                const Icon(
+                  Icons.payment_outlined,
+                  size: 16,
+                  color: Colors.grey,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  _paymentLabel(_payment),
+                  style: const TextStyle(fontSize: 13),
+                ),
+              ],
+            ),
           ],
         ),
         actions: [
@@ -213,8 +233,9 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
         totalAmount: _total,
         paymentMethod: _payment,
         deliveryMethod: _delivery,
-        deliveryAddress:
-            _delivery == 'delivery' ? _addressCtrl.text.trim() : null,
+        deliveryAddress: _delivery == 'delivery'
+            ? _addressCtrl.text.trim()
+            : null,
         notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
       );
       widget.onOrderPlaced();
@@ -222,11 +243,15 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Row(children: [
-              Icon(Icons.check_circle, color: Colors.white, size: 18),
-              SizedBox(width: 8),
-              Text('Order placed! We\'ll notify you of updates.'),
-            ]),
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white, size: 18),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text('Order placed! We\'ll notify you of updates.'),
+                ),
+              ],
+            ),
             backgroundColor: Color(0xFF2E7D32),
             duration: Duration(seconds: 4),
           ),
@@ -248,10 +273,10 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
   }
 
   String _paymentLabel(String p) => switch (p) {
-        'mobile_money' => 'Mobile Money',
-        'card' => 'Card Payment',
-        _ => 'Cash on Pickup',
-      };
+    'mobile_money' => 'Mobile Money',
+    'card' => 'Card Payment',
+    _ => 'Cash on Pickup',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -274,7 +299,9 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 2),
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.3),
                         borderRadius: BorderRadius.circular(10),
@@ -297,7 +324,9 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 2),
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.3),
                         borderRadius: BorderRadius.circular(10),
@@ -329,15 +358,21 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.shopping_cart_outlined,
-                size: 80, color: Colors.grey.shade300),
+            Icon(
+              Icons.shopping_cart_outlined,
+              size: 80,
+              color: Colors.grey.shade300,
+            ),
             const SizedBox(height: 16),
-            Text('Your cart is empty',
-                style:
-                    TextStyle(fontSize: 18, color: Colors.grey.shade400)),
+            Text(
+              'Your cart is empty',
+              style: TextStyle(fontSize: 18, color: Colors.grey.shade400),
+            ),
             const SizedBox(height: 8),
-            Text('Add medicines from the shop',
-                style: TextStyle(color: Colors.grey.shade400)),
+            Text(
+              'Add medicines from the shop',
+              style: TextStyle(color: Colors.grey.shade400),
+            ),
           ],
         ),
       );
@@ -349,7 +384,6 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              // Cart items
               ...widget.cart.map((item) => _buildCartItem(item)),
               const SizedBox(height: 20),
 
@@ -396,11 +430,17 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
                   ),
                   items: const [
                     DropdownMenuItem(
-                        value: 'cash', child: Text('Cash on Pickup')),
+                      value: 'cash',
+                      child: Text('Cash on Pickup'),
+                    ),
                     DropdownMenuItem(
-                        value: 'mobile_money', child: Text('Mobile Money')),
+                      value: 'mobile_money',
+                      child: Text('Mobile Money'),
+                    ),
                     DropdownMenuItem(
-                        value: 'card', child: Text('Card Payment')),
+                      value: 'card',
+                      child: Text('Card Payment'),
+                    ),
                   ],
                   onChanged: (v) => setState(() => _payment = v!),
                 ),
@@ -420,7 +460,7 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
                   ),
                 ),
               ]),
-              const SizedBox(height: 100), // space for bottom bar
+              const SizedBox(height: 100),
             ],
           ),
         ),
@@ -444,8 +484,10 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Total',
-                      style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  const Text(
+                    'Total',
+                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
                   Text(
                     'GH₵ ${_total.toStringAsFixed(2)}',
                     style: const TextStyle(
@@ -467,7 +509,9 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2),
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
                           )
                         : const Icon(Icons.shopping_cart_checkout),
                     label: Text(
@@ -485,7 +529,11 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
   }
 
   Widget _deliveryOption(
-      String value, String label, IconData icon, String subtitle) {
+    String value,
+    String label,
+    IconData icon,
+    String subtitle,
+  ) {
     final selected = _delivery == value;
     return GestureDetector(
       onTap: () => setState(() => _delivery = value),
@@ -497,66 +545,78 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
               : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: selected
-                ? const Color(0xFF2E7D32)
-                : Colors.grey.shade300,
+            color: selected ? const Color(0xFF2E7D32) : Colors.grey.shade300,
             width: selected ? 2 : 1,
           ),
         ),
         child: Row(
           children: [
-            Icon(icon,
-                color: selected
-                    ? const Color(0xFF2E7D32)
-                    : Colors.grey,
-                size: 22),
+            Icon(
+              icon,
+              color: selected ? const Color(0xFF2E7D32) : Colors.grey,
+              size: 22,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label,
-                      style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: selected
-                              ? const Color(0xFF2E7D32)
-                              : Colors.black87)),
-                  Text(subtitle,
-                      style: TextStyle(
-                          fontSize: 11, color: Colors.grey.shade500)),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      color: selected
+                          ? const Color(0xFF2E7D32)
+                          : Colors.black87,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                  ),
                 ],
               ),
             ),
             if (selected)
-              const Icon(Icons.check_circle,
-                  color: Color(0xFF2E7D32), size: 20),
+              const Icon(
+                Icons.check_circle,
+                color: Color(0xFF2E7D32),
+                size: 20,
+              ),
           ],
         ),
       ),
     );
   }
 
+  // ── FIXED: Cart item — was missing Expanded around the text column ─────────
   Widget _buildCartItem(Map<String, dynamic> item) {
-    final price =
-        double.tryParse(item['unit_price']?.toString() ?? '0') ?? 0;
+    final price = double.tryParse(item['unit_price']?.toString() ?? '0') ?? 0;
     final qty = item['quantity'] as int? ?? 1;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // Medicine icon
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: Colors.green.shade50,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.medication,
-                  color: Color(0xFF2E7D32), size: 22),
+              child: const Icon(
+                Icons.medication,
+                color: Color(0xFF2E7D32),
+                size: 22,
+              ),
             ),
             const SizedBox(width: 12),
+
+            // Name + price — Expanded so text wraps horizontally, not vertically
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -564,22 +624,31 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
                   Text(
                     item['product_name'] ?? '',
                     style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 14),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                    // Allow wrapping to 2 lines max on very long names
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 2),
                   Text(
                     'GH₵ ${price.toStringAsFixed(2)} each',
-                    style: TextStyle(
-                        color: Colors.grey.shade500, fontSize: 12),
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
                   ),
                 ],
               ),
             ),
+
+            // Qty controls
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
                   onPressed: () {
-                    final newCart =
-                        List<Map<String, dynamic>>.from(widget.cart);
+                    final newCart = List<Map<String, dynamic>>.from(
+                      widget.cart,
+                    );
                     if (qty <= 1) {
                       newCart.remove(item);
                     } else {
@@ -594,9 +663,13 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text('$qty',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 16)),
+                  child: Text(
+                    '$qty',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
                 ),
                 IconButton(
                   onPressed: () {
@@ -610,26 +683,28 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
                 ),
               ],
             ),
-            const SizedBox(width: 8),
-            SizedBox(
-              width: 72,
-              child: Text(
-                'GH₵ ${(price * qty).toStringAsFixed(2)}',
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2E7D32)),
-                textAlign: TextAlign.right,
+
+            const SizedBox(width: 4),
+
+            // Subtotal
+            Text(
+              'GH₵ ${(price * qty).toStringAsFixed(2)}',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2E7D32),
+                fontSize: 13,
               ),
             ),
+
+            // Remove button
             IconButton(
               onPressed: () {
-                final newCart =
-                    List<Map<String, dynamic>>.from(widget.cart);
+                final newCart = List<Map<String, dynamic>>.from(widget.cart);
                 newCart.remove(item);
                 widget.onUpdateCart(newCart);
               },
               icon: const Icon(Icons.close, size: 18, color: Colors.grey),
-              padding: EdgeInsets.zero,
+              padding: const EdgeInsets.only(left: 4),
               constraints: const BoxConstraints(),
             ),
           ],
@@ -649,9 +724,10 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
           const SizedBox(height: 12),
           ...children,
         ],
@@ -664,7 +740,8 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
   Widget _buildOrderHistory() {
     if (_loadingOrders) {
       return const Center(
-          child: CircularProgressIndicator(color: Color(0xFF2E7D32)));
+        child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+      );
     }
 
     if (_orders.isEmpty) {
@@ -672,15 +749,21 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.receipt_long_outlined,
-                size: 80, color: Colors.grey.shade300),
+            Icon(
+              Icons.receipt_long_outlined,
+              size: 80,
+              color: Colors.grey.shade300,
+            ),
             const SizedBox(height: 16),
-            Text('No orders yet',
-                style:
-                    TextStyle(fontSize: 18, color: Colors.grey.shade400)),
+            Text(
+              'No orders yet',
+              style: TextStyle(fontSize: 18, color: Colors.grey.shade400),
+            ),
             const SizedBox(height: 8),
-            Text('Your orders will appear here',
-                style: TextStyle(color: Colors.grey.shade400)),
+            Text(
+              'Your orders will appear here',
+              style: TextStyle(color: Colors.grey.shade400),
+            ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () => _tabs.animateTo(0),
@@ -692,14 +775,11 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
       );
     }
 
-    // Group active vs past orders
     final activeOrders = _orders
-        .where((o) =>
-            !['completed', 'cancelled'].contains(o['status']))
+        .where((o) => !['completed', 'cancelled'].contains(o['status']))
         .toList();
     final pastOrders = _orders
-        .where((o) =>
-            ['completed', 'cancelled'].contains(o['status']))
+        .where((o) => ['completed', 'cancelled'].contains(o['status']))
         .toList();
 
     return RefreshIndicator(
@@ -726,20 +806,21 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
   Widget _sectionHeader(String title, int count) {
     return Row(
       children: [
-        Text(title,
-            style: const TextStyle(
-                fontWeight: FontWeight.bold, fontSize: 15)),
+        Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+        ),
         const SizedBox(width: 8),
         Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
             color: Colors.grey.shade200,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Text('$count',
-              style: TextStyle(
-                  fontSize: 12, color: Colors.grey.shade600)),
+          child: Text(
+            '$count',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          ),
         ),
       ],
     );
@@ -764,11 +845,10 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
       ),
       child: Column(
         children: [
-          // Main row — tap to expand
           InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: () => setState(() =>
-                _selectedOrderId = isExpanded ? null : orderId),
+            onTap: () =>
+                setState(() => _selectedOrderId = isExpanded ? null : orderId),
             child: Padding(
               padding: const EdgeInsets.all(14),
               child: Column(
@@ -776,10 +856,11 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
                 children: [
                   Row(
                     children: [
-                      // Status badge
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
                         decoration: BoxDecoration(
                           color: color.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
@@ -787,16 +868,15 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(_statusIcon(status),
-                                color: color, size: 13),
+                            Icon(_statusIcon(status), color: color, size: 13),
                             const SizedBox(width: 4),
                             Text(
-                              status[0].toUpperCase() +
-                                  status.substring(1),
+                              status[0].toUpperCase() + status.substring(1),
                               style: TextStyle(
-                                  color: color,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12),
+                                color: color,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
                             ),
                           ],
                         ),
@@ -805,7 +885,9 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
                       Text(
                         order['receipt_number'] ?? '',
                         style: TextStyle(
-                            color: Colors.grey.shade500, fontSize: 11),
+                          color: Colors.grey.shade500,
+                          fontSize: 11,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Icon(
@@ -825,11 +907,12 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
                           items.isEmpty
                               ? 'No items'
                               : items.length == 1
-                                  ? items[0]['product_name'] ?? ''
-                                  : '${items[0]['product_name']} + ${items.length - 1} more',
+                              ? items[0]['product_name'] ?? ''
+                              : '${items[0]['product_name']} + ${items.length - 1} more',
                           style: const TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14),
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -837,24 +920,23 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
                       Text(
                         'GH₵ ${total.toStringAsFixed(2)}',
                         style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2E7D32),
-                            fontSize: 15),
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2E7D32),
+                          fontSize: 15,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '${_deliveryLabel(order['delivery_method'])} · ${_paymentLabel(order['payment_method'] ?? 'cash')}',
-                    style: TextStyle(
-                        color: Colors.grey.shade500, fontSize: 12),
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
                   ),
                 ],
               ),
             ),
           ),
 
-          // Expanded detail view
           if (isExpanded) ...[
             const Divider(height: 1),
             Padding(
@@ -862,99 +944,103 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // All items
-                  const Text('Items',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 13)),
+                  const Text(
+                    'Items',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
                   const SizedBox(height: 8),
-                  ...items.map((item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: Colors.green.shade50,
-                                borderRadius:
-                                    BorderRadius.circular(6),
-                              ),
-                              child: const Icon(Icons.medication,
-                                  color: Color(0xFF2E7D32), size: 16),
+                  ...items.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(6),
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                '${item['product_name']}',
-                                style: const TextStyle(fontSize: 13),
-                              ),
+                            child: const Icon(
+                              Icons.medication,
+                              color: Color(0xFF2E7D32),
+                              size: 16,
                             ),
-                            Text(
-                              '× ${item['quantity']}',
-                              style: TextStyle(
-                                  color: Colors.grey.shade500,
-                                  fontSize: 13),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '${item['product_name']}',
+                              style: const TextStyle(fontSize: 13),
                             ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'GH₵ ${(double.tryParse(item['subtotal']?.toString() ?? '0') ?? 0).toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 13),
+                          ),
+                          Text(
+                            '× ${item['quantity']}',
+                            style: TextStyle(
+                              color: Colors.grey.shade500,
+                              fontSize: 13,
                             ),
-                          ],
-                        ),
-                      )),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'GH₵ ${(double.tryParse(item['subtotal']?.toString() ?? '0') ?? 0).toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
                   const Divider(height: 20),
-
-                  // Order info
-                  _detailRow('Receipt Number',
-                      order['receipt_number'] ?? 'N/A'),
-                  _detailRow('Delivery',
-                      _deliveryLabel(order['delivery_method'])),
+                  _detailRow(
+                    'Receipt Number',
+                    order['receipt_number'] ?? 'N/A',
+                  ),
+                  _detailRow(
+                    'Delivery',
+                    _deliveryLabel(order['delivery_method']),
+                  ),
                   if (order['delivery_address'] != null)
-                    _detailRow(
-                        'Address', order['delivery_address']),
-                  _detailRow('Payment',
-                      _paymentLabel(order['payment_method'] ?? 'cash')),
+                    _detailRow('Address', order['delivery_address']),
+                  _detailRow(
+                    'Payment',
+                    _paymentLabel(order['payment_method'] ?? 'cash'),
+                  ),
                   if (order['notes'] != null)
                     _detailRow('Notes', order['notes']),
                   const SizedBox(height: 8),
-
-                  // Total
                   Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Total',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15)),
+                      const Text(
+                        'Total',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
                       Text(
                         'GH₵ ${total.toStringAsFixed(2)}',
                         style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: Color(0xFF2E7D32)),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: Color(0xFF2E7D32),
+                        ),
                       ),
                     ],
                   ),
-
-                  // Status timeline
                   const SizedBox(height: 16),
                   _buildStatusTimeline(status),
-
-                  // Cancel button for pending orders
                   if (status == 'pending') ...[
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: () =>
-                            _cancelOrder(orderId),
-                        icon: const Icon(Icons.cancel_outlined,
-                            size: 16),
+                        onPressed: () => _cancelOrder(orderId),
+                        icon: const Icon(Icons.cancel_outlined, size: 16),
                         label: const Text('Cancel Order'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.red,
@@ -980,14 +1066,16 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
         children: [
           SizedBox(
             width: 90,
-            child: Text(label,
-                style: TextStyle(
-                    color: Colors.grey.shade500, fontSize: 12)),
+            child: Text(
+              label,
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+            ),
           ),
           Expanded(
-            child: Text(value,
-                style: const TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w500)),
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            ),
           ),
         ],
       ),
@@ -1003,8 +1091,7 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
       ('completed', 'Completed', Icons.check_circle_outline),
     ];
 
-    final currentIdx =
-        steps.indexWhere((s) => s.$1 == currentStatus);
+    final currentIdx = steps.indexWhere((s) => s.$1 == currentStatus);
     final isCancelled = currentStatus == 'cancelled';
 
     if (isCancelled) {
@@ -1018,10 +1105,13 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
           children: [
             Icon(Icons.cancel, color: Colors.red.shade700, size: 18),
             const SizedBox(width: 8),
-            Text('Order was cancelled',
-                style: TextStyle(
-                    color: Colors.red.shade700,
-                    fontWeight: FontWeight.w500)),
+            Text(
+              'Order was cancelled',
+              style: TextStyle(
+                color: Colors.red.shade700,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
       );
@@ -1030,9 +1120,10 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Order Progress',
-            style:
-                TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        const Text(
+          'Order Progress',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+        ),
         const SizedBox(height: 10),
         Row(
           children: steps.asMap().entries.map((entry) {
@@ -1053,18 +1144,18 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
                         width: 28,
                         height: 28,
                         decoration: BoxDecoration(
-                          color: isDone
-                              ? color
-                              : Colors.grey.shade100,
+                          color: isDone ? color : Colors.grey.shade100,
                           shape: BoxShape.circle,
                           border: Border.all(
-                              color: color, width: isCurrent ? 2 : 1),
+                            color: color,
+                            width: isCurrent ? 2 : 1,
+                          ),
                         ),
-                        child: Icon(step.$3,
-                            size: 14,
-                            color: isDone
-                                ? Colors.white
-                                : Colors.grey.shade400),
+                        child: Icon(
+                          step.$3,
+                          size: 14,
+                          color: isDone ? Colors.white : Colors.grey.shade400,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -1106,12 +1197,12 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Cancel Order'),
-        content: const Text(
-            'Are you sure you want to cancel this order?'),
+        content: const Text('Are you sure you want to cancel this order?'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('No')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('No'),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -1126,39 +1217,39 @@ class _StudentOrdersPageState extends State<StudentOrdersPage>
       _loadOrders();
       if (mounted) {
         setState(() => _selectedOrderId = null);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Order cancelled.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Order cancelled.')));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Failed to cancel: $e'),
-              backgroundColor: Colors.red),
+            content: Text('Failed to cancel: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
   }
 
-  String _deliveryLabel(dynamic v) =>
-      v == 'delivery' ? 'Delivery' : 'Pickup';
+  String _deliveryLabel(dynamic v) => v == 'delivery' ? 'Delivery' : 'Pickup';
 
   Color _statusColor(String s) => switch (s) {
-        'completed' => Colors.green,
-        'confirmed' => Colors.blue,
-        'processing' => Colors.orange,
-        'ready' => Colors.teal,
-        'cancelled' => Colors.red,
-        _ => Colors.orange,
-      };
+    'completed' => Colors.green,
+    'confirmed' => Colors.blue,
+    'processing' => Colors.orange,
+    'ready' => Colors.teal,
+    'cancelled' => Colors.red,
+    _ => Colors.orange,
+  };
 
   IconData _statusIcon(String s) => switch (s) {
-        'completed' => Icons.check_circle,
-        'confirmed' => Icons.thumb_up,
-        'processing' => Icons.settings,
-        'ready' => Icons.store,
-        'cancelled' => Icons.cancel,
-        _ => Icons.pending,
-      };
+    'completed' => Icons.check_circle,
+    'confirmed' => Icons.thumb_up,
+    'processing' => Icons.settings,
+    'ready' => Icons.store,
+    'cancelled' => Icons.cancel,
+    _ => Icons.pending,
+  };
 }

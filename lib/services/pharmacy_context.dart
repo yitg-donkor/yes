@@ -6,7 +6,7 @@
 // Use this across all admin screens to avoid RLS violations
 // ============================================================================
 
-import 'package:yes/services/supabase_service.dart';
+import 'package:group_9/services/supabase_service.dart';
 
 class PharmacyContext {
   static String? _cachedPharmacyId;
@@ -16,14 +16,14 @@ class PharmacyContext {
   /// Returns null if user is not staff or doesn't have a pharmacy
   static Future<String?> getPharmacyId() async {
     final userId = SupabaseService.currentUserId;
-    
+
     // Return cached value if user hasn't changed
     if (userId == _cachedUserId && _cachedPharmacyId != null) {
       return _cachedPharmacyId;
     }
-    
+
     if (userId == null) return null;
-    
+
     try {
       final profile = await SupabaseService.getProfile(userId);
       _cachedUserId = userId;
@@ -56,7 +56,7 @@ class PharmacyContext {
     if (pharmacyId != null) {
       data['pharmacy_id'] = pharmacyId;
     }
-    
+
     return data;
   }
 

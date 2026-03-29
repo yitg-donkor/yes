@@ -50,7 +50,7 @@ class _CreateStaffDialogState extends State<CreateStaffDialog> {
 
     setState(() => _saving = true);
     try {
-      await SupabaseService.signUp(
+      await SupabaseService.createStaffAccount(
         email: _email.text.trim(),
         password: _password.text,
         name: _name.text.trim(),
@@ -117,10 +117,7 @@ class _CreateStaffDialogState extends State<CreateStaffDialog> {
                   value: 'pharmacist',
                   child: Text('Pharmacist / Worker'),
                 ),
-                DropdownMenuItem(
-                  value: 'admin',
-                  child: Text('Admin'),
-                ),
+                DropdownMenuItem(value: 'admin', child: Text('Admin')),
               ],
               onChanged: (v) => setState(() => _role = v!),
             ),
@@ -162,8 +159,9 @@ class _CreateStaffDialogState extends State<CreateStaffDialog> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 suffixIcon: IconButton(
-                  icon:
-                      Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                  icon: Icon(
+                    _obscure ? Icons.visibility_off : Icons.visibility,
+                  ),
                   onPressed: () => setState(() => _obscure = !_obscure),
                 ),
               ),

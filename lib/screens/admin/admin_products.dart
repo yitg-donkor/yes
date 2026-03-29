@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import '../../services/supabase_service.dart';
 import '../../services/pharmacy_context.dart';
@@ -44,7 +47,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
     );
   }
 
-  Future<void> _delete(String id) async {
+  Future<void> _delete(String id, String? imageUrl) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -64,6 +67,9 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
       ),
     );
     if (confirm == true) {
+      if (imageUrl != null && imageUrl.isNotEmpty) {
+        await SupabaseService.deleteProductImage(imageUrl);
+      }
       await SupabaseService.deleteProduct(id);
       _load();
     }
@@ -141,7 +147,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                           crossAxisCount: cols,
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 12,
-                          childAspectRatio: 1.1,
+                          childAspectRatio: 1.0,
                         ),
                         itemCount: _products.length,
                         itemBuilder: (ctx, i) =>
@@ -159,6 +165,8 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
     final qty = p['quantity'] as int? ?? 0;
     final isLow = qty < 10;
     final isOut = qty == 0;
+    final imageUrl = p['image_url'] as String?;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -167,23 +175,24 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
           children: [
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.medication,
-                    color: Color(0xFF2E7D32),
-                    size: 18,
-                  ),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: imageUrl != null && imageUrl.isNotEmpty
+                      ? Image.network(
+                          imageUrl,
+                          width: 44,
+                          height: 44,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _iconPlaceholder(),
+                        )
+                      : _iconPlaceholder(),
                 ),
                 const Spacer(),
                 PopupMenuButton<String>(
                   onSelected: (v) {
                     if (v == 'edit') _showForm(p);
-                    if (v == 'delete') _delete(p['id']);
+                    if (v == 'delete')
+                      _delete(p['id'], p['image_url'] as String?);
                   },
                   itemBuilder: (_) => [
                     const PopupMenuItem(
@@ -276,7 +285,19 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
       ),
     );
   }
+
+  Widget _iconPlaceholder() => Container(
+    width: 44,
+    height: 44,
+    decoration: BoxDecoration(
+      color: Colors.green.shade50,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: const Icon(Icons.medication, color: Color(0xFF2E7D32), size: 22),
+  );
 }
+
+// ─── Product Dialog ───────────────────────────────────────────────────────────
 
 class _ProductDialog extends StatefulWidget {
   final Map<String, dynamic>? item;
@@ -284,14 +305,6 @@ class _ProductDialog extends StatefulWidget {
   const _ProductDialog({this.item, required this.onSaved});
   @override
   State<_ProductDialog> createState() => _ProductDialogState();
-}
-
-Future<String?> _getMyPharmacyId() async {
-  final userId = SupabaseService.currentUserId;
-  if (userId == null) return null;
-
-  final profile = await SupabaseService.getProfile(userId);
-  return profile?['pharmacy_id'] as String?;
 }
 
 class _ProductDialogState extends State<_ProductDialog> {
@@ -306,6 +319,13 @@ class _ProductDialogState extends State<_ProductDialog> {
   bool _saving = false;
   List<Map<String, dynamic>> _suppliers = [];
   String? _selectedSupplier;
+
+  // Image state
+  Uint8List? _pickedImageBytes;
+  String? _pickedImageName;
+  String? _pickedMimeType;
+  String? _existingImageUrl;
+  bool _removeExistingImage = false;
 
   @override
   void initState() {
@@ -329,34 +349,130 @@ class _ProductDialogState extends State<_ProductDialog> {
       }
       _requiresPrescription = p['requires_prescription'] ?? false;
       _selectedSupplier = p['supplier_id'];
+      _existingImageUrl = p['image_url'] as String?;
     }
     SupabaseService.getSuppliers().then((s) {
       if (mounted) setState(() => _suppliers = s);
     });
   }
 
+  @override
+  void dispose() {
+    _name.dispose();
+    _desc.dispose();
+    _price.dispose();
+    _qty.dispose();
+    _category.dispose();
+    _expiry.dispose();
+    super.dispose();
+  }
+
+  /// Web-native file picker using dart:html — no plugin needed.
+  void _pickImage() {
+    final uploadInput = html.FileUploadInputElement()
+      ..accept = 'image/jpeg,image/png,image/webp'
+      ..click();
+
+    uploadInput.onChange.listen((event) async {
+      final file = uploadInput.files?.first;
+      if (file == null) return;
+
+      final reader = html.FileReader();
+      reader.readAsArrayBuffer(file);
+
+      reader.onLoadEnd.listen((_) {
+        if (reader.result == null) return;
+        final bytes = Uint8List.fromList((reader.result as List<int>));
+        setState(() {
+          _pickedImageBytes = bytes;
+          _pickedImageName = file.name;
+          _pickedMimeType = file.type; // e.g. 'image/jpeg'
+          _removeExistingImage = false;
+        });
+      });
+    });
+  }
+
   Future<void> _save() async {
-    setState(() => _saving = true);
-    final pharmacyId = await _getMyPharmacyId();
-    final data = {
-      'name': _name.text,
-      'description': _desc.text,
-      'unit_price': double.tryParse(_price.text) ?? 0,
-      'quantity': int.tryParse(_qty.text) ?? 0,
-      'category': _category.text.isEmpty ? 'General' : _category.text,
-      'requires_prescription': _requiresPrescription,
-      'latest_expiry_date': _expiry.text.isEmpty ? null : _expiry.text,
-      if (_selectedSupplier != null) 'supplier_id': _selectedSupplier,
-      // ⚠️ CRITICAL: Include pharmacy_id for new products
-      if (widget.item == null && pharmacyId != null) 'pharmacy_id': pharmacyId,
-    };
-    if (widget.item == null) {
-      final dataWithPharmacy = await PharmacyContext.addPharmacyId(data);
-      await SupabaseService.addProduct(dataWithPharmacy);
+    if (_name.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Product name is required.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
     }
-    if (mounted) {
-      Navigator.pop(context);
-      widget.onSaved();
+
+    setState(() => _saving = true);
+
+    try {
+      String? imageUrl = _existingImageUrl;
+
+      // Upload new image if picked
+      if (_pickedImageBytes != null && _pickedImageName != null) {
+        final ext = _pickedImageName!.split('.').last.toLowerCase();
+        final mime = _pickedMimeType ?? 'image/jpeg';
+        final safeName = _name.text.trim().toLowerCase().replaceAll(
+          RegExp(r'[^a-z0-9]'),
+          '_',
+        );
+        final fileName =
+            '${DateTime.now().millisecondsSinceEpoch}_$safeName.$ext';
+
+        // Delete old image before uploading new one
+        if (_existingImageUrl != null && _existingImageUrl!.isNotEmpty) {
+          await SupabaseService.deleteProductImage(_existingImageUrl!);
+        }
+
+        imageUrl = await SupabaseService.uploadProductImage(
+          bytes: _pickedImageBytes!,
+          fileName: fileName,
+          contentType: mime,
+        );
+      } else if (_removeExistingImage && _existingImageUrl != null) {
+        await SupabaseService.deleteProductImage(_existingImageUrl!);
+        imageUrl = null;
+      }
+
+      final data = <String, dynamic>{
+        'name': _name.text.trim(),
+        'description': _desc.text.trim().isEmpty ? null : _desc.text.trim(),
+        'unit_price': double.tryParse(_price.text) ?? 0,
+        'quantity': int.tryParse(_qty.text) ?? 0,
+        'category': _category.text.trim().isEmpty
+            ? 'General'
+            : _category.text.trim(),
+        'requires_prescription': _requiresPrescription,
+        'latest_expiry_date': _expiry.text.trim().isEmpty
+            ? null
+            : _expiry.text.trim(),
+        'image_url': imageUrl,
+        if (_selectedSupplier != null) 'supplier_id': _selectedSupplier,
+      };
+
+      if (widget.item == null) {
+        final dataWithPharmacy = await PharmacyContext.addPharmacyId(data);
+        await SupabaseService.addProduct(dataWithPharmacy);
+      } else {
+        await SupabaseService.updateProduct(widget.item!['id'], data);
+      }
+
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onSaved();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -369,12 +485,11 @@ class _ProductDialogState extends State<_ProductDialog> {
 
   Future<void> _pickExpiryDate() async {
     final now = DateTime.now();
-    final nextYear = DateTime(now.year + 10, now.month, now.day);
     final chosen = await showDatePicker(
       context: context,
       initialDate: _expiryDate ?? now,
       firstDate: DateTime(now.year - 1),
-      lastDate: nextYear,
+      lastDate: DateTime(now.year + 10, now.month, now.day),
     );
     if (chosen != null) {
       setState(() {
@@ -389,12 +504,23 @@ class _ProductDialogState extends State<_ProductDialog> {
     return AlertDialog(
       title: Text(widget.item == null ? 'Add Product' : 'Edit Product'),
       content: SizedBox(
-        width: 450,
+        width: 480,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _tf(_name, 'Product Name', Icons.inventory),
+              // ── Image Picker ──────────────────────────────────────────
+              const Text(
+                'Product Image',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              ),
+              const SizedBox(height: 8),
+              _buildImagePicker(),
+              const SizedBox(height: 16),
+
+              // ── Fields ────────────────────────────────────────────────
+              _tf(_name, 'Product Name *', Icons.inventory),
               const SizedBox(height: 12),
               _tf(_desc, 'Description (optional)', Icons.description),
               const SizedBox(height: 12),
@@ -431,7 +557,7 @@ class _ProductDialogState extends State<_ProductDialog> {
               const SizedBox(height: 12),
               if (_suppliers.isNotEmpty)
                 DropdownButtonFormField<String>(
-                  initialValue: _selectedSupplier,
+                  value: _selectedSupplier,
                   decoration: InputDecoration(
                     labelText: 'Supplier',
                     prefixIcon: const Icon(Icons.local_shipping),
@@ -466,7 +592,7 @@ class _ProductDialogState extends State<_ProductDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: _saving ? null : () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
         ElevatedButton(
@@ -485,6 +611,118 @@ class _ProductDialogState extends State<_ProductDialog> {
       ],
     );
   }
+
+  Widget _buildImagePicker() {
+    final hasNew = _pickedImageBytes != null;
+    final hasExisting =
+        _existingImageUrl != null &&
+        _existingImageUrl!.isNotEmpty &&
+        !_removeExistingImage;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Preview box — click to pick
+        GestureDetector(
+          onTap: _pickImage,
+          child: Container(
+            width: 90,
+            height: 90,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: const Color(0xFF2E7D32).withOpacity(0.4),
+                width: 1.5,
+              ),
+            ),
+            child: hasNew
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(9),
+                    child: Image.memory(_pickedImageBytes!, fit: BoxFit.cover),
+                  )
+                : hasExisting
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(9),
+                    child: Image.network(
+                      _existingImageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _emptyBox(),
+                    ),
+                  )
+                : _emptyBox(),
+          ),
+        ),
+        const SizedBox(width: 14),
+
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ElevatedButton.icon(
+              onPressed: _pickImage,
+              icon: const Icon(Icons.photo_library_outlined, size: 16),
+              label: Text(
+                hasNew || hasExisting ? 'Change Image' : 'Pick Image',
+              ),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+              ),
+            ),
+            if (hasNew || hasExisting) ...[
+              const SizedBox(height: 6),
+              TextButton.icon(
+                onPressed: () => setState(() {
+                  _pickedImageBytes = null;
+                  _pickedImageName = null;
+                  _pickedMimeType = null;
+                  _removeExistingImage = true;
+                }),
+                icon: const Icon(
+                  Icons.delete_outline,
+                  size: 16,
+                  color: Colors.red,
+                ),
+                label: const Text(
+                  'Remove Image',
+                  style: TextStyle(color: Colors.red, fontSize: 12),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 4),
+            Text(
+              'JPG, PNG or WebP',
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _emptyBox() => Column(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Icon(
+        Icons.add_photo_alternate_outlined,
+        color: Colors.grey.shade400,
+        size: 28,
+      ),
+      const SizedBox(height: 4),
+      Text(
+        'Tap to add',
+        style: TextStyle(color: Colors.grey.shade400, fontSize: 10),
+      ),
+    ],
+  );
 
   Widget _tf(
     TextEditingController ctrl,
