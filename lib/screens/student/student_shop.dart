@@ -332,32 +332,26 @@ class _StudentShopPageState extends State<StudentShopPage> {
 
     return GestureDetector(
       onTap: () => _showDetail(p),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
+      child: Card(
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Product image ─────────────────────────────────────────
               Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                     child: imageUrl != null && imageUrl.isNotEmpty
                         ? Image.network(
                             imageUrl,
-                            height: 90,
                             width: double.infinity,
+                            height: 120,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) =>
-                                _imagePlaceholder(height: 90),
+                            errorBuilder: (_, __, ___) =>
+                                _iconPlaceholder(height: 120),
                           )
-                        : _imagePlaceholder(height: 90),
+                        : _iconPlaceholder(height: 120),
                   ),
                   if (requiresRx)
                     Positioned(
@@ -508,16 +502,14 @@ class _StudentShopPageState extends State<StudentShopPage> {
     );
   }
 
-  Widget _imagePlaceholder({double height = 90}) => Container(
-    height: height,
+  Widget _iconPlaceholder({double height = 44}) => Container(
     width: double.infinity,
+    height: height,
     decoration: BoxDecoration(
       color: Colors.green.shade50,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(8),
     ),
-    child: const Center(
-      child: Icon(Icons.medication, color: Color(0xFF2E7D32), size: 32),
-    ),
+    child: const Icon(Icons.medication, color: Color(0xFF2E7D32), size: 28),
   );
 
   // ── Product Detail Bottom Sheet with image ───────────────────────────────
@@ -560,15 +552,29 @@ class _StudentShopPageState extends State<StudentShopPage> {
                   borderRadius: BorderRadius.circular(12),
                   child: Image.network(
                     imageUrl,
-                    height: 160,
+                    height: 200,
                     width: double.infinity,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    errorBuilder: (_, __, ___) => Container(
+                      height: 200,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.medication,
+                          color: Color(0xFF2E7D32),
+                          size: 56,
+                        ),
+                      ),
+                    ),
                   ),
                 )
               else
                 Container(
-                  height: 100,
+                  height: 200,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.green.shade50,
@@ -578,7 +584,7 @@ class _StudentShopPageState extends State<StudentShopPage> {
                     child: Icon(
                       Icons.medication,
                       color: Color(0xFF2E7D32),
-                      size: 48,
+                      size: 56,
                     ),
                   ),
                 ),

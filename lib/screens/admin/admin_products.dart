@@ -173,53 +173,64 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            Stack(
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: imageUrl != null && imageUrl.isNotEmpty
                       ? Image.network(
                           imageUrl,
-                          width: 44,
-                          height: 44,
+                          width: double.infinity,
+                          height: 120,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _iconPlaceholder(),
+                          errorBuilder: (_, __, ___) =>
+                              _iconPlaceholder(height: 120),
                         )
-                      : _iconPlaceholder(),
+                      : _iconPlaceholder(height: 120),
                 ),
-                const Spacer(),
-                PopupMenuButton<String>(
-                  onSelected: (v) {
-                    if (v == 'edit') _showForm(p);
-                    if (v == 'delete')
-                      _delete(p['id'], p['image_url'] as String?);
-                  },
-                  itemBuilder: (_) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit, size: 16),
-                          SizedBox(width: 8),
-                          Text('Edit'),
-                        ],
+                Positioned(
+                  right: 6,
+                  top: 6,
+                  child: PopupMenuButton<String>(
+                    onSelected: (v) {
+                      if (v == 'edit') _showForm(p);
+                      if (v == 'delete')
+                        _delete(p['id'], p['image_url'] as String?);
+                    },
+                    itemBuilder: (_) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit, size: 16),
+                            SizedBox(width: 8),
+                            Text('Edit'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete, size: 16, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Delete', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(
+                        Icons.more_vert,
+                        size: 18,
+                        color: Colors.grey,
                       ),
                     ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete, size: 16, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('Delete', style: TextStyle(color: Colors.red)),
-                        ],
-                      ),
-                    ),
-                  ],
-                  child: const Icon(
-                    Icons.more_vert,
-                    size: 18,
-                    color: Colors.grey,
                   ),
                 ),
               ],
@@ -286,14 +297,14 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
     );
   }
 
-  Widget _iconPlaceholder() => Container(
-    width: 44,
-    height: 44,
+  Widget _iconPlaceholder({double height = 44}) => Container(
+    width: double.infinity,
+    height: height,
     decoration: BoxDecoration(
       color: Colors.green.shade50,
       borderRadius: BorderRadius.circular(8),
     ),
-    child: const Icon(Icons.medication, color: Color(0xFF2E7D32), size: 22),
+    child: const Icon(Icons.medication, color: Color(0xFF2E7D32), size: 28),
   );
 }
 
