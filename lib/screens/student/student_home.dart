@@ -82,8 +82,9 @@ class _StudentHomePageState extends State<StudentHomePage> {
                           style: TextStyle(color: Colors.white70, fontSize: 14),
                         ),
                         const SizedBox(height: 8),
-                        GestureDetector(
+                        InkWell(
                           onTap: widget.onNavigateToShop,
+                          borderRadius: BorderRadius.circular(10),
                           child: Container(
                             height: 36,
                             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -243,19 +244,31 @@ class _StudentHomePageState extends State<StudentHomePage> {
 
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 0.85,
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (ctx, i) => _productCard(_featured[i]),
-                    childCount: _featured.length,
-                  ),
+                sliver: SliverLayoutBuilder(
+                  builder: (ctx, constraints) {
+                    final cols = constraints.crossAxisExtent > 1100
+                        ? 4
+                        : constraints.crossAxisExtent > 750
+                        ? 3
+                        : constraints.crossAxisExtent > 500
+                        ? 2
+                        : 1;
+                    return SliverGrid(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: cols,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 1.0,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (ctx, i) => _productCard(_featured[i]),
+                        childCount: _featured.length,
+                      ),
+                    );
+                  },
                 ),
               ),
+
               const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
             ],
           ],
@@ -265,27 +278,31 @@ class _StudentHomePageState extends State<StudentHomePage> {
   }
 
   Widget _categoryChip(String label, IconData icon, Color color) {
-    return Container(
-      margin: const EdgeInsets.only(right: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 16),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+    return InkWell(
+      onTap: widget.onNavigateToShop,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.only(right: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.2)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 16),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -347,112 +364,130 @@ class _StudentHomePageState extends State<StudentHomePage> {
     final qty = p['quantity'] as int? ?? 0;
     final isOut = qty == 0;
     final requiresRx = p['requires_prescription'] as bool? ?? false;
+    final price = double.tryParse(p['unit_price']?.toString() ?? '0') ?? 0;
+    final imageUrl = p['image_url'] as String?;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(10),
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => widget.onAddToCart(p, 1),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: imageUrl != null && imageUrl.isNotEmpty
+                        ? Image.network(
+                            imageUrl,
+                            width: double.infinity,
+                            height: 100,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (_, child, progress) {
+                              if (progress == null) return child;
+                              return _imagePlaceholder(height: 100);
+                            },
+                            errorBuilder: (_, __, ___) =>
+                                _imagePlaceholder(height: 100),
+                          )
+                        : _imagePlaceholder(height: 100),
                   ),
-                  child: const Icon(
-                    Icons.medication,
-                    color: Color(0xFF2E7D32),
-                    size: 22,
-                  ),
-                ),
-                const Spacer(),
-                if (requiresRx)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'Rx',
-                      style: TextStyle(
-                        color: Colors.orange.shade700,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              p['name'] ?? '',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              p['category'] ?? 'General',
-              style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
-            ),
-            const Spacer(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'GH₵ ${(double.tryParse(p['unit_price']?.toString() ?? '0') ?? 0).toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2E7D32),
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              height: 34,
-              child: isOut
-                  ? OutlinedButton(
-                      onPressed: null,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.grey,
-                      ),
-                      child: const Text(
-                        'Out of Stock',
-                        style: TextStyle(fontSize: 11),
-                      ),
-                    )
-                  : ElevatedButton(
-                      onPressed: () => widget.onAddToCart(p, 1),
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                  if (requiresRx)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade600,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'Rx',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                      child: const Text(
-                        'Add to Cart',
-                        style: TextStyle(fontSize: 11),
-                      ),
                     ),
-            ),
-          ],
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                p['name'] ?? '',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                p['category'] ?? 'General',
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+              ),
+              const Spacer(),
+              Text(
+                'GH₵ ${price.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2E7D32),
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 6),
+              SizedBox(
+                width: double.infinity,
+                height: 34,
+                child: isOut
+                    ? Container(
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'Out of Stock',
+                          style: TextStyle(color: Colors.grey, fontSize: 11),
+                        ),
+                      )
+                    : ElevatedButton(
+                        onPressed: () => widget.onAddToCart(p, 1),
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          'Add to Cart',
+                          style: TextStyle(fontSize: 11),
+                        ),
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  Widget _imagePlaceholder({double height = 100}) => Container(
+    width: double.infinity,
+    height: height,
+    decoration: BoxDecoration(
+      color: Colors.green.shade50,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: const Icon(Icons.medication, color: Color(0xFF2E7D32), size: 28),
+  );
 }

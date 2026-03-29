@@ -126,54 +126,50 @@ class _StudentShopPageState extends State<StudentShopPage> {
                   if (_selectedPharmacyId != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 4, bottom: 4),
-                      child: Row(
-                        children: [
-                          FutureBuilder<double>(
-                            future: SupabaseService.getPharmacyRating(
-                              _selectedPharmacyId!,
-                            ),
-                            builder: (ctx, snap) {
-                              final rating = snap.data ?? 0.0;
-                              return Row(
-                                children: [
-                                  ...List.generate(
-                                    5,
-                                    (i) => Icon(
-                                      i < rating.round()
-                                          ? Icons.star_rounded
-                                          : Icons.star_outline_rounded,
-                                      size: 14,
-                                      color: Colors.amber,
-                                    ),
+                      child: FutureBuilder<double>(
+                        future: SupabaseService.getPharmacyRating(
+                          _selectedPharmacyId!,
+                        ),
+                        builder: (ctx, snap) {
+                          final rating = snap.data ?? 0.0;
+                          return Row(
+                            children: [
+                              ...List.generate(
+                                5,
+                                (i) => Icon(
+                                  i < rating.round()
+                                      ? Icons.star_rounded
+                                      : Icons.star_outline_rounded,
+                                  size: 14,
+                                  color: Colors.amber,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                rating == 0
+                                    ? 'No ratings yet'
+                                    : '${rating.toStringAsFixed(1)} / 5.0',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              InkWell(
+                                onTap: _showRateDialog,
+                                child: Text(
+                                  'Rate this pharmacy',
+                                  style: TextStyle(
+                                    color: Colors.amber.shade700,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    decoration: TextDecoration.underline,
                                   ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    rating == 0
-                                        ? 'No ratings yet'
-                                        : '${rating.toStringAsFixed(1)} / 5.0',
-                                    style: TextStyle(
-                                      color: Colors.grey.shade600,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  GestureDetector(
-                                    onTap: () => _showRateDialog(),
-                                    child: Text(
-                                      'Rate this pharmacy',
-                                      style: TextStyle(
-                                        color: Colors.amber.shade700,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                        ],
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                 ],
@@ -258,17 +254,28 @@ class _StudentShopPageState extends State<StudentShopPage> {
                   )
                 : RefreshIndicator(
                     onRefresh: _loadProducts,
-                    child: GridView.builder(
-                      padding: const EdgeInsets.all(16),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 0.68,
-                          ),
-                      itemCount: _products.length,
-                      itemBuilder: (ctx, i) => _buildCard(_products[i]),
+                    child: LayoutBuilder(
+                      builder: (ctx, constraints) {
+                        final cols = constraints.maxWidth > 1100
+                            ? 4
+                            : constraints.maxWidth > 750
+                            ? 3
+                            : constraints.maxWidth > 500
+                            ? 2
+                            : 1;
+                        return GridView.builder(
+                          padding: const EdgeInsets.all(16),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: cols,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                childAspectRatio: 1.0,
+                              ),
+                          itemCount: _products.length,
+                          itemBuilder: (ctx, i) => _buildCard(_products[i]),
+                        );
+                      },
                     ),
                   ),
           ),
@@ -278,7 +285,7 @@ class _StudentShopPageState extends State<StudentShopPage> {
   }
 
   Widget _pharmacyChip(String? id, String name, bool selected) {
-    return GestureDetector(
+    return InkWell(
       onTap: () {
         setState(() {
           _selectedPharmacyId = id;
@@ -287,6 +294,7 @@ class _StudentShopPageState extends State<StudentShopPage> {
         });
         _loadProducts();
       },
+      borderRadius: BorderRadius.circular(20),
       child: Container(
         margin: const EdgeInsets.only(right: 8, bottom: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -320,7 +328,7 @@ class _StudentShopPageState extends State<StudentShopPage> {
     );
   }
 
-  // ── Product Card with real image ─────────────────────────────────────────
+  // ── Product Card ─────────────────────────────────────────────────────────
   Widget _buildCard(Map<String, dynamic> p) {
     final qty = p['quantity'] as int? ?? 0;
     final isOut = qty == 0;
@@ -330,9 +338,10 @@ class _StudentShopPageState extends State<StudentShopPage> {
     final pharmacyName = p['pharmacies']?['name'] ?? '';
     final imageUrl = p['image_url'] as String?;
 
-    return GestureDetector(
-      onTap: () => _showDetail(p),
-      child: Card(
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _showDetail(p),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
@@ -348,6 +357,10 @@ class _StudentShopPageState extends State<StudentShopPage> {
                             width: double.infinity,
                             height: 120,
                             fit: BoxFit.cover,
+                            loadingBuilder: (_, child, progress) {
+                              if (progress == null) return child;
+                              return _iconPlaceholder(height: 120);
+                            },
                             errorBuilder: (_, __, ___) =>
                                 _iconPlaceholder(height: 120),
                           )
@@ -512,7 +525,7 @@ class _StudentShopPageState extends State<StudentShopPage> {
     child: const Icon(Icons.medication, color: Color(0xFF2E7D32), size: 28),
   );
 
-  // ── Product Detail Bottom Sheet with image ───────────────────────────────
+  // ── Product Detail Bottom Sheet ──────────────────────────────────────────
   void _showDetail(Map<String, dynamic> p) {
     int qty = 1;
     final maxQty = p['quantity'] as int? ?? 0;
@@ -547,47 +560,22 @@ class _StudentShopPageState extends State<StudentShopPage> {
               const SizedBox(height: 16),
 
               // ── Image banner ─────────────────────────────────────────
-              if (imageUrl != null && imageUrl.isNotEmpty)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    imageUrl,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      height: 200,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.medication,
-                          color: Color(0xFF2E7D32),
-                          size: 56,
-                        ),
-                      ),
-                    ),
-                  ),
-                )
-              else
-                Container(
-                  height: 200,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.medication,
-                      color: Color(0xFF2E7D32),
-                      size: 56,
-                    ),
-                  ),
-                ),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: imageUrl != null && imageUrl.isNotEmpty
+                    ? Image.network(
+                        imageUrl,
+                        height: 200,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (_, child, progress) {
+                          if (progress == null) return child;
+                          return _detailImagePlaceholder();
+                        },
+                        errorBuilder: (_, __, ___) => _detailImagePlaceholder(),
+                      )
+                    : _detailImagePlaceholder(),
+              ),
               const SizedBox(height: 16),
 
               Row(
@@ -778,6 +766,18 @@ class _StudentShopPageState extends State<StudentShopPage> {
     );
   }
 
+  Widget _detailImagePlaceholder() => Container(
+    height: 200,
+    width: double.infinity,
+    decoration: BoxDecoration(
+      color: Colors.green.shade50,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: const Center(
+      child: Icon(Icons.medication, color: Color(0xFF2E7D32), size: 56),
+    ),
+  );
+
   void _showRateDialog() {
     if (_selectedPharmacyId == null) return;
     int selectedRating = 0;
@@ -801,8 +801,9 @@ class _StudentShopPageState extends State<StudentShopPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
                   5,
-                  (i) => GestureDetector(
+                  (i) => InkWell(
                     onTap: () => setSt(() => selectedRating = i + 1),
+                    borderRadius: BorderRadius.circular(20),
                     child: Padding(
                       padding: const EdgeInsets.all(4),
                       child: Icon(
