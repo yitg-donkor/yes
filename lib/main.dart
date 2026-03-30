@@ -60,9 +60,9 @@ class PharmaOneApp extends StatelessWidget {
             backgroundColor: const Color(0xFF2E7D32),
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           ),
         ),
         appBarTheme: const AppBarTheme(
@@ -75,6 +75,8 @@ class PharmaOneApp extends StatelessWidget {
     );
   }
 }
+
+// ── Auth Gate ─────────────────────────────────────────────────────────────────
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
@@ -98,17 +100,27 @@ class AuthGate extends StatelessWidget {
               return const _LoadingScreen();
             }
 
+            final profile = profileSnapshot.data;
             final role =
-                profileSnapshot.data?['role']?.toString() ??
+                profile?['role']?.toString() ??
                 session.user.userMetadata?['role']?.toString() ??
                 'student';
 
-            // ── Role-based routing ────────────────────────────────────────
+            // Staff roles need a pharmacy suspension check
+            if (role == 'admin' || role == 'pharmacist') {
+              final pharmacyId = profile?['pharmacy_id'] as String?;
+              if (pharmacyId != null) {
+                return _PharmacyGate(pharmacyId: pharmacyId, role: role);
+              }
+            }
+
             return switch (role) {
               'super_admin' => const SuperAdminShell(),
-              'admin'       => const AdminShell(portalType: AdminPortalType.admin),
-              'pharmacist'  => const AdminShell(portalType: AdminPortalType.worker),
-              _             => const StudentShell(),
+              'admin' => const AdminShell(portalType: AdminPortalType.admin),
+              'pharmacist' => const AdminShell(
+                portalType: AdminPortalType.worker,
+              ),
+              _ => const StudentShell(),
             };
           },
         );
@@ -117,13 +129,146 @@ class AuthGate extends StatelessWidget {
   }
 }
 
+// ── Pharmacy Gate ─────────────────────────────────────────────────────────────
+// Actively checks pharmacy suspension status on mount and when the app
+// resumes from background, so suspension takes effect immediately even
+// for already-logged-in staff.
+
+class _PharmacyGate extends StatefulWidget {
+  final String pharmacyId;
+  final String role;
+
+  const _PharmacyGate({required this.pharmacyId, required this.role});
+
+  @override
+  State<_PharmacyGate> createState() => _PharmacyGateState();
+}
+
+class _PharmacyGateState extends State<_PharmacyGate>
+    with WidgetsBindingObserver {
+  bool? _isActive;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _check();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Re-check every time the app comes back to the foreground
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _check();
+  }
+
+  Future<void> _check() async {
+    final active = await SupabaseService.isPharmacyActive(widget.pharmacyId);
+    if (mounted) setState(() => _isActive = active);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isActive == null) return const _LoadingScreen();
+
+    if (!_isActive!) {
+      return _SuspendedScreen(onSignOut: () => SupabaseService.signOut());
+    }
+
+    return widget.role == 'admin'
+        ? const AdminShell(portalType: AdminPortalType.admin)
+        : const AdminShell(portalType: AdminPortalType.worker);
+  }
+}
+
+// ── Shared Screens ────────────────────────────────────────────────────────────
+
 class _LoadingScreen extends StatelessWidget {
   const _LoadingScreen();
+
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
+      body: Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32))),
+    );
+  }
+}
+
+class _SuspendedScreen extends StatelessWidget {
+  final VoidCallback onSignOut;
+
+  const _SuspendedScreen({required this.onSignOut});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F6FA),
       body: Center(
-          child: CircularProgressIndicator(color: Color(0xFF2E7D32))),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(28),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.block_rounded,
+                  size: 64,
+                  color: Colors.red.shade400,
+                ),
+              ),
+              const SizedBox(height: 28),
+              const Text(
+                'Pharmacy Suspended',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Your pharmacy has been suspended by the network '
+                'administrator. Please contact support for assistance.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 36),
+              OutlinedButton.icon(
+                onPressed: onSignOut,
+                icon: const Icon(Icons.logout, color: Colors.red),
+                label: const Text(
+                  'Sign Out',
+                  style: TextStyle(color: Colors.red, fontSize: 15),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.red),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

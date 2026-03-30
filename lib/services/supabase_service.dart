@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart'; // for debugPrint
 
 class SupabaseService {
   static SupabaseClient get client => Supabase.instance.client;
@@ -181,11 +182,61 @@ class SupabaseService {
   static Future<void> updatePharmacy(String id, Map<String, dynamic> data) =>
       client.from('pharmacies').update(data).eq('id', id);
 
-  static Future<void> deletePharmacy(String id) =>
-      client.from('pharmacies').delete().eq('id', id);
+  static Future<void> deletePharmacy(String pharmacyId) async {
+    // Step 1: Find all staff accounts linked to this pharmacy
+    final staffProfiles = await client
+        .from('profiles')
+        .select('id')
+        .eq('pharmacy_id', pharmacyId)
+        .inFilter('role', ['admin', 'pharmacist']);
+
+    // Step 2: Delete each staff user from Supabase Auth via Admin API
+    for (final staff in staffProfiles as List) {
+      final userId = staff['id'] as String;
+      try {
+        final res = await http.delete(
+          Uri.parse('$_supabaseUrl/auth/v1/admin/users/$userId'),
+          headers: {
+            'Authorization': 'Bearer $_serviceRoleKey',
+            'apikey': _serviceRoleKey,
+          },
+        );
+        if (res.statusCode != 200 && res.statusCode != 204) {
+          debugPrint(
+            'Warning: could not delete auth user $userId — ${res.body}',
+          );
+        }
+      } catch (e) {
+        debugPrint('Warning: error deleting auth user $userId — $e');
+      }
+    }
+
+    // Step 3: Delete staff profiles from the profiles table
+    if ((staffProfiles as List).isNotEmpty) {
+      final staffIds = staffProfiles.map((s) => s['id'] as String).toList();
+      await client.from('profiles').delete().inFilter('id', staffIds);
+    }
+
+    // Step 4: Delete the pharmacy — cascades products, branches,
+    // employees, suppliers, orders, sales (per your FK cascade setup)
+    await client.from('pharmacies').delete().eq('id', pharmacyId);
+  }
 
   static Future<void> setPharmacyStatus(String id, bool isActive) =>
       client.from('pharmacies').update({'is_active': isActive}).eq('id', id);
+
+  static Future<bool> isPharmacyActive(String pharmacyId) async {
+    try {
+      final res = await client
+          .from('pharmacies')
+          .select('is_active')
+          .eq('id', pharmacyId)
+          .single();
+      return res['is_active'] as bool? ?? true;
+    } catch (_) {
+      return true; // fail open — don't lock out on network error
+    }
+  }
 
   // ─── Pharmacy Reviews ──────────────────────────────────────────────────────
 
@@ -245,13 +296,39 @@ class SupabaseService {
     String? search,
     bool inStockOnly = false,
   }) async {
+    // For student-facing queries (no specific pharmacy selected, or inStockOnly),
+    // restrict to active pharmacies only.
+    Set<String>? activePharmacyIds;
+    if (pharmacyId == null || inStockOnly) {
+      final activePharmacies = await client
+          .from('pharmacies')
+          .select('id')
+          .eq('is_active', true);
+      activePharmacyIds = (activePharmacies as List)
+          .map((p) => p['id'] as String)
+          .toSet();
+    }
+
     var query = client.from('products').select('*, pharmacies(id, name)');
-    if (pharmacyId != null) query = query.eq('pharmacy_id', pharmacyId);
-    if (category != null && category != 'All')
+
+    if (pharmacyId != null) {
+      // Admin view: scoped to a specific pharmacy, no active filter needed
+      query = query.eq('pharmacy_id', pharmacyId);
+    } else if (activePharmacyIds != null && activePharmacyIds.isNotEmpty) {
+      query = query.inFilter('pharmacy_id', activePharmacyIds.toList());
+    } else if (activePharmacyIds != null && activePharmacyIds.isEmpty) {
+      // No active pharmacies — return empty list immediately
+      return [];
+    }
+
+    if (category != null && category != 'All') {
       query = query.eq('category', category);
+    }
     if (inStockOnly) query = query.gt('quantity', 0);
-    if (search != null && search.isNotEmpty)
+    if (search != null && search.isNotEmpty) {
       query = query.ilike('name', '%$search%');
+    }
+
     return query.order('name');
   }
 

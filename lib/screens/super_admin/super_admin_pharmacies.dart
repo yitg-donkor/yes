@@ -216,6 +216,12 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
                   isActive ? Colors.red : Colors.green,
                   () => _toggleStatus(id, isActive),
                 ),
+                _actionBtn(
+                  'Delete',
+                  Icons.delete_forever_outlined,
+                  Colors.grey.shade600,
+                  () => _showDeleteDialog(p),
+                ),
               ],
             ),
           ],
@@ -593,6 +599,130 @@ class _SuperAdminPharmaciesPageState extends State<SuperAdminPharmaciesPage> {
           'Pharmacy ${currentlyActive ? 'suspended' : 'reactivated'}.',
         ),
         backgroundColor: currentlyActive ? Colors.red : Colors.green,
+      ),
+    );
+  }
+
+  void _showDeleteDialog(Map<String, dynamic> p) {
+    final nameCtrl = TextEditingController();
+    final pharmacyName = p['name'] as String? ?? 'this pharmacy';
+
+    showDialog(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setSt) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.delete_forever, color: Colors.red),
+              SizedBox(width: 10),
+              Text('Delete Pharmacy'),
+            ],
+          ),
+          content: SizedBox(
+            width: 420,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.red.shade700,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'This cannot be undone.',
+                            style: TextStyle(
+                              color: Colors.red.shade700,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Deleting "$pharmacyName" will permanently remove all its '
+                        'products, branches, employees, suppliers, orders, and '
+                        'staff accounts from the network.',
+                        style: TextStyle(
+                          color: Colors.red.shade700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Type the pharmacy name to confirm:',
+                  style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: nameCtrl,
+                  decoration: InputDecoration(
+                    hintText: pharmacyName,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onChanged: (_) => setSt(() {}),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton.icon(
+              onPressed: nameCtrl.text.trim() == pharmacyName
+                  ? () async {
+                      Navigator.pop(ctx);
+                      try {
+                        await SupabaseService.deletePharmacy(p['id']);
+                        _load();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '"$pharmacyName" permanently deleted.',
+                            ),
+                            backgroundColor: Colors.red.shade700,
+                          ),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Delete failed: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  : null,
+              icon: const Icon(Icons.delete_forever, size: 16),
+              label: const Text('Delete Permanently'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade700,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: Colors.grey.shade300,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
